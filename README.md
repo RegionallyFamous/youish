@@ -1,434 +1,199 @@
 # Dittobot
 
-Paste messy notes, rough drafts, or thought dumps; get a voice-faithful rewrite that sounds like you, not like a committee laminated a thesaurus.
+Voice-faithful rewrites for people who want AI to sound like them, not like a committee laminated a thesaurus.
 
 [![Validate](https://github.com/RegionallyFamous/dittobot/actions/workflows/validate.yml/badge.svg)](https://github.com/RegionallyFamous/dittobot/actions/workflows/validate.yml)
 ![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)
 ![Runtime dependencies: none](https://img.shields.io/badge/runtime_deps-none-brightgreen.svg)
 
-## Quick Start
+Paste messy notes, rough drafts, or a stream of consciousness. Dittobot turns the pile into finished prose while preserving the writer underneath it. That should not be controversial, but apparently here we are.
 
-Dittobot is for the moment when your brain has the idea but the draft is still a pile of sentence laundry.
+## The Point
 
-```bash
-git clone https://github.com/RegionallyFamous/dittobot.git
-cd dittobot
-python3 scripts/install.py
-```
+The answer is not "never use AI." The answer is "teach the tool your voice."
 
-Then use it like this:
+Generic AI writing is real. It can be padded, shiny, over-balanced, weirdly eager, allergic to risk, and full of phrases nobody says unless they are trapped in a webinar. I get why people hate it. I hate it too. But banning AI because bad AI writing exists is like banning spellcheck because someone accepted the wrong suggestion. It treats the worst workflow as the only workflow, which is a very confident way to lose the plot.
+
+If your AI writes badly, the answer is not to throw away the tool. The answer is to teach it taste.
+
+Dittobot is built around that idea. It is not a ghostwriter. It is a voice-preserving editor. It reads the draft as evidence: what the writer cares about, what they would never say, which facts are sacred, where the joke is hiding, and which strange little phrase is actually the soul of the thing.
+
+That matters because the real risk is not that AI helps people write. The real risk is letting an untrained tool flatten every person into the same beige announcement voice, then pretending the only choices are "publish the paste" or "never touch the tool." That is not ethics. That is a workflow panic attack wearing a name badge.
+
+The better move, the more hopeful move, and frankly the less exhausting move is to encode taste.
+
+## The AI Hater Case, Answered
+
+If you hate AI writing, you are not imagining the problem. A lot of AI writing is bad. Some of it is so bad it feels like a quarterly business review got trapped in a fog machine. The mistake is treating bad defaults as destiny.
+
+**"AI writing has no soul."**
+
+Correct, if the tool is asked to invent a soul from nothing. That is not writing; that is soup with a login screen. Dittobot starts with the writer's actual words. The soul is already there: stance, rhythm, irritation, warmth, uncertainty, humor, pressure, taste. The job is not to manufacture humanity. The job is to stop smothering it.
+
+**"It is too verbose."**
+
+Bad AI loves to explain the obvious, stack soft claims, and keep talking after the point is made. It writes like it is being paid by the clause. Dittobot's default posture is editorial restraint: cut filler, collapse repetition, keep the useful texture, and return the rewrite without a lecture unless the user asks for one.
+
+**"It sounds like slop."**
+
+Slop is not the presence of AI. Slop is unedited output, unsupported claims, fake enthusiasm, generic phrases, and a missing speaker. It is hitting "make better" and accepting "In today's fast-paced world" like that sentence has not already committed enough crimes. Dittobot treats those patterns as failures, with anti-generic checks, protected-fact ledgers, and regression cases for the stuff that makes prose feel machine-polished in the worst way.
+
+**"It all sounds the same."**
+
+Yes, if everyone accepts the first generic draft. That is the whole problem. Dittobot is built to do the opposite: preserve odd phrasing when it works, protect dry jokes, keep justified edge, respect formality when the context needs it, and refuse to turn every draft into the same cheerful memo from the Department of Smooth Nothing.
+
+**"It makes things up."**
+
+That is a real failure mode, so Dittobot is fenced against it. It does not add anecdotes, numbers, customers, citations, examples, legal certainty, or convenient specifics that were not in the source. If the draft needs a fact, the right answer is to leave a modest gap or ask, not invent a tiny documentary in the margins.
+
+**"It hides who really wrote it."**
+
+Using an editor is not the same as outsourcing authorship. The ethical line is control, intent, and disclosure where disclosure matters. Dittobot is designed to keep the user's claims, taste, and decisions in charge. It helps the writer sound more like themselves, not less, which seems like the part everyone should be excited about instead of pretending pencils are morally superior now.
+
+**"People will get lazy."**
+
+Some will. That is true of every tool. But a good AI writing workflow can also make people more deliberate because it forces them to name what should be preserved: facts, stance, audience, boundaries, and voice. The lazy move is not using AI. The lazy move is accepting output without taste, then blaming the entire category because nobody bothered to steer.
+
+**"The dashes give it away."**
+
+Dashes are not the crime. Predictability is. Dittobot can obey a no-dash constraint, but the deeper fix is cadence: shorter sentences where they help, longer ones where they earn the space, and punctuation that sounds like the writer instead of a house style guide with anxiety. We can fix the dashes. We can also fix the thinking underneath them.
+
+## Watch It Work
+
+### Stream Of Consciousness
+
+Source:
 
 ```text
-Use $dittobot on this:
-
 ok the launch note is somehow both too long and says nothing. what i actually mean is we fixed the importer bug, people can retry failed rows now, and i need it to sound calm but not like a haunted changelog
 ```
 
-Dittobot should preserve your voice, protect your facts, remove the fog, and hand back the finished version by default.
+Dittobot notices:
 
-It returns something like:
+- The facts are "importer bug fixed" and "failed rows can be retried."
+- The voice has a dry little image: "haunted changelog."
+- The target is probably a calm launch note, not a motivational announcement.
+
+Rewrite:
 
 ```text
 We fixed the importer bug. People can retry failed rows now, so the launch note should be calm and useful, not a haunted changelog.
 ```
 
-You do not need to explain the whole job. Paste the mess; Dittobot infers the edit.
+### Generic AI Paste
 
-## Why This Exists
-
-The answer is not "never use AI." The answer is "teach the tool your voice."
-
-Generic AI writing is real. It can be padded, shiny, over-balanced, weirdly eager, allergic to risk, and full of phrases nobody says unless they are trapped in a webinar. But banning AI because bad AI writing exists is like banning spellcheck because someone once accepted the wrong suggestion. It treats the worst workflow as the only workflow.
-
-If your AI writes badly, the answer is not to throw away the tool. The answer is to teach it taste.
-
-Dittobot is built around that idea. It does not try to replace the writer. It tries to become the editor who knows what the writer sounds like, what they care about, what they would never say, and where their draft is hiding the good part under three blankets of filler.
-
-That matters because AI writing tools can flatten expression. Research on human-AI co-writing has found that writers care about preserving authentic voice and that personalization can help when it supports the writer rather than replacing them. Other work has found AI suggestions can homogenize writing toward dominant styles and reduce cultural nuance. Dittobot is a practical answer to that risk: keep the speed, reject the flattening.
-
-- ["It was 80% me, 20% AI": Seeking Authenticity in Co-Writing with Large Language Models](https://arxiv.org/abs/2411.13032)
-- [AI Suggestions Homogenize Writing Toward Western Styles and Diminish Cultural Nuances](https://arxiv.org/abs/2409.11360)
-
-## What Dittobot Does
-
-Dittobot is a Codex skill for rewriting, tightening, diagnosing, and punching up prose while preserving the user's voice.
-
-It:
-
-- turns raw notes, rants, fragments, and thought dumps into usable prose by default;
-- preserves voice, intent, facts, stance, rhythm, humor, and formality;
-- tightens prose without sanding off the human parts;
-- removes bland AI tells like generic openers, shiny abstractions, tidy triples, and dash dependency;
-- avoids invented specifics, fake confidence, unsupported claims, and convenient made-up evidence;
-- keeps private ledgers for constraints, claims/facts, and voice markers;
-- uses fast editorial gates by default and expands into a 20-pass checklist for hard work;
-- includes a deterministic 100-case fixture harness plus an optional live model smoke test;
-- ships a local rewrite audit tool for checking arbitrary source/rewrite pairs without calling a model;
-- ships a rewrite provenance report so users can see what was preserved, lost, or riskily added;
-- ships privacy-first failure fixture tooling for redacting bad rewrites before they become public tests;
-- includes a case lab for turning real bad rewrites into focused regression fixtures;
-- supports compact reusable voice profile contracts, fact fences, and local voice probes.
-
-Dittobot is not a ghostwriter. It is a voice-preserving editor. The goal is not "sounds professional." The goal is "sounds like you on a very good writing day."
-
-## For Writers Worried About Voice Loss
-
-Dittobot edits from the draft outward. It treats your wording as evidence, not debris.
-
-It preserves odd phrasing when the odd phrasing carries intent. It keeps justified anger, tenderness, awkwardness, bluntness, and dry humor when those are part of the point. It treats smoothness as optional. Sometimes the best edit is one sentence left alone.
-
-## What Dittobot Will Not Do
-
-Dittobot will not:
-
-- invent anecdotes, claims, citations, customers, numbers, or evidence;
-- add "humanizing" typos or fake casualness;
-- mimic a famous living writer;
-- disguise unethical AI use;
-- override legal, medical, financial, academic, or technical precision;
-- turn every draft into a shiny professional announcement.
-
-## Why Handwriting Everything Is The Wrong Fight
-
-Handwriting every draft to prove you are not using AI is not virtue. It is a slow ritual of avoidance. If the real issue is "the tool does not write like me yet," then refusing to teach it your taste is, frankly, insane.
-
-The real problem is not that AI can help with writing. The real problem is letting an untrained tool flatten your work into beige committee paste, then pretending the only options are "publish the paste" or "never use the tool." That is the wrong fight.
-
-The sane move is to encode taste.
-
-Teach the system what to preserve. Teach it which claims it cannot change. Teach it when to be blunt, when to be warm, when to leave the weird phrase alone because the weird phrase is the whole point. Teach it that a better sentence is not always a smoother sentence. Teach it that "less AI-sounding" does not mean adding typos, fake casualness, or random little messes. It means restoring intent.
-
-Most of the time, teaching it means giving it your actual messy draft, not writing a perfect prompt.
-
-Writing with AI should not mean outsourcing your voice. It should mean giving your voice a better editor.
-
-## About The Name
-
-The name is a playful nod to Ditto from Pokemon: the whole trick is transformation without losing the original shape. Also, "ditto" is a perfectly normal English word, so please do not sue me, Nintendo. Dittobot is unofficial and unaffiliated, just a wink from one weird little tool to another.
-
-## Install
-
-Requirements:
-
-- Codex with skills support;
-- Python 3 only for validation scripts;
-- a macOS/Linux shell for the symlink commands below. Windows users can use a copy install instead.
-
-Clone the repo:
-
-```bash
-git clone https://github.com/RegionallyFamous/dittobot.git
-cd dittobot
-```
-
-Install it into your Codex skills folder:
-
-```bash
-python3 scripts/install.py
-```
-
-The installer backs up an existing `~/.codex/skills/dittobot`, creates a symlink by default, and runs the install verifier. Use `--copy` if you cannot or do not want to symlink; copy installs include only the installable skill package files:
-
-```bash
-python3 scripts/install.py --copy
-```
-
-Manual symlink install:
-
-```bash
-mkdir -p ~/.codex/skills
-if [ -e ~/.codex/skills/dittobot ]; then
-  mv ~/.codex/skills/dittobot ~/.codex/skills/dittobot.backup.$(date +%s)
-fi
-ln -s "$(pwd)" ~/.codex/skills/dittobot
-```
-
-Symlinks are preferred because they prevent drift. If you need a copy, rerun the installer so stale package files are replaced cleanly:
-
-```bash
-python3 scripts/install.py --copy
-```
-
-Then invoke it as `$dittobot`.
-
-What gets installed: `SKILL.md`, `agents/openai.yaml`, icon assets, optional references, and helper scripts for validation, installation, ad hoc rewrite audits, rewrite provenance reports, regression-case scaffolding, voice probing, live reporting, and optional live eval. Normal Dittobot use does not run or load the scripts or references.
-
-Check that your installed skill still matches the repo:
-
-```bash
-python3 scripts/check_install.py
-```
-
-Build a local Codex plugin package when you want a plugin-style distribution artifact:
-
-```bash
-python3 scripts/build_plugin.py
-python3 scripts/check_plugin_package.py dist/dittobot-plugin --version 0.2.0
-```
-
-The generated package lives in `dist/dittobot-plugin` and is ignored by git. It contains `.codex-plugin/plugin.json`, Codex UI metadata, original Dittobot icon assets, and the installable skill under `skills/dittobot/`.
-
-## Use
-
-Most of the time, do not over-instruct it. Drop in the mess.
-
-```text
-Use $dittobot on this:
-
-[paste the stream of consciousness, rough email, notes, rant, draft, or half-formed announcement]
-```
-
-These are defaults, not chores:
-
-- preserve voice, intent, facts, stance, rhythm, humor, and formality;
-- tighten the writing and remove bland AI tells;
-- keep weird phrasing when the weird phrasing works;
-- avoid invented specifics, fake confidence, and unsupported claims;
-- preserve uncertainty in legal-ish, technical, academic, medical, financial, or factual text;
-- return only the rewrite unless you ask for notes, options, diagnosis, or a comparison.
-
-Only add instructions when you need a hard constraint or a special mode:
-
-```text
-Use $dittobot on this in exactly 40 words. No dashes.
-```
-
-```text
-Use $dittobot to infer a reusable voice profile from these samples. Do not rewrite yet.
-```
-
-```text
-Use $dittobot to show what changed and why.
-```
-
-## Examples
-
-Generic AI:
+Source:
 
 ```text
 In today's rapidly evolving landscape, our robust platform empowers teams to unlock seamless collaboration and drive meaningful impact.
 ```
 
-Dittobot rewrite:
+Dittobot notices:
+
+- The sentence has almost no checkable content.
+- The confident tone is not earned.
+- Inventing specifics would make it worse.
+
+Rewrite:
 
 ```text
 We are updating the platform so teams can find the work, make a decision, and move on. The draft still needs specifics: what changed, who it helps, and what people can do now.
 ```
 
-Why it works: it cuts the shiny abstractions, keeps the claim modest, and asks for real details instead of inventing them.
+### Voice Worth Keeping
 
-Voicey draft:
+Source:
 
 ```text
 This draft is not bad. It just walks into the room and immediately apologizes for existing.
 ```
 
-Dittobot rewrite:
+Dittobot notices:
+
+- The image is the point.
+- A smoother rewrite would be worse.
+- The edit should clarify the diagnosis without sanding off the joke.
+
+Rewrite:
 
 ```text
 The draft is not bad. It just walks into the room and immediately apologizes for existing. The idea works; the framing is getting in its way.
 ```
 
-Why it works: it keeps the dry image because that is the writer's fingerprint.
+### Precision-Sensitive Writing
 
-Precision-sensitive draft:
+Source:
 
 ```text
 I think we probably need to send notice within 10 business days, but I am not counsel and the clause had weird carveouts.
 ```
 
-Dittobot rewrite:
+Dittobot notices:
+
+- "Probably," "I think," and "not counsel" are not clutter here. They are precision.
+- "10 business days" is protected.
+- The rewrite must not turn uncertainty into legal certainty.
+
+Rewrite:
 
 ```text
 I think we may need to send notice within 10 business days. I would not state that as definitive, though, because I am not counsel and the clause had unusual carveouts.
 ```
 
-Why it works: it improves clarity without turning uncertainty into legal certainty.
+## What Dittobot Is
 
-## Validate
+Dittobot is a Codex skill for rewriting, tightening, diagnosing, and punching up prose while preserving the user's voice, intent, facts, stance, rhythm, humor, and formality.
 
-Run the deterministic fixture validator:
+It runs a quiet editorial loop: protect meaning, identify the voice, tighten the draft, remove bland AI tells, check constraints, and keep iterating when the work is hard. For high-stakes or craft-heavy text, it expands into a silent 20-pass rewrite process.
+
+It ships with a 100-case regression harness, model-free rewrite audits, privacy-first failure-fixture tools, compact voice profile contracts, fact fences, and public release scorecards. The normal user experience is still simple: paste the mess and get the clean version.
+
+## Use It
 
 ```bash
-python3 scripts/validate_skill.py
-python3 scripts/regression_100.py
-python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
-python3 scripts/rewrite_report.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --protected "10 days" --preserve-uncertainty
-python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
-python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing."
-profile="$(mktemp)"
-python3 scripts/voice_profile.py compile --sample "This draft is not bad. It just walks into the room and apologizes for existing. I want the useful bit without the meeting oatmeal." --out "$profile"
-python3 scripts/voice_profile.py validate "$profile"
-python3 scripts/redact_case.py --case-id redacted_case_01 --source "Person A has nick@example.com and sk-abc123456789012345678." --rewrite "Person A shipped it." --expected "Person A still needs the note fixed." --json
-python3 scripts/failure_fixture.py --case-id fixture_case_01 --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days." --failed-rewrite "Notice is due in 10 days." --desired-rewrite "I think notice may be due in 10 days, haunted changelog and all." --preserve-uncertainty --allow-inline-private --json
-python3 scripts/build_plugin.py --version 0.2.0 --validator ""
-python3 scripts/check_plugin_package.py dist/dittobot-plugin --version 0.2.0
-python3 -m py_compile scripts/*.py
-tmpdir="$(mktemp -d)"
-mkdir -p "$tmpdir/codex-skills"
-ln -s "$(pwd)" "$tmpdir/codex-skills/dittobot"
-python3 scripts/check_install.py --install-dir "$tmpdir/codex-skills/dittobot"
-python3 scripts/install.py --install-dir "$tmpdir/codex-skills/dittobot-installed"
-python3 scripts/install.py --install-dir "$tmpdir/codex-skills/dittobot-installed"
-python3 scripts/install.py --copy --install-dir "$tmpdir/codex-skills/dittobot-installed-copy"
-python3 scripts/check_install.py --install-dir "$tmpdir/codex-skills/dittobot-installed-copy"
+git clone https://github.com/RegionallyFamous/dittobot.git
+cd dittobot
+python3 scripts/install.py
 ```
 
-Expected result:
+Then:
 
 ```text
-Skill repo validation passed.
-VALIDATOR SELF-TESTS: PASS
-TOTAL: 100/100 passed
-PASS | source_words=9 rewrite_words=9
-# Rewrite Report
-# Review before committing: keep fixtures redacted and focused.
-# Voice Probe
-Status: PASS
-Plugin package check passed: ...
-Installed skill matches repo (symlink): ...
-Installed symlink: ...
-Installed copy: ...
-Installed skill matches repo (copy): ...
+Use $dittobot on this:
+
+[paste the messy draft, notes, rant, email, announcement, post, caption, or half-formed thought]
 ```
 
-This validates the 100 primary fixtures, the validator itself, profile-boundary contracts, mutation checks against bad outputs, the ad hoc audit tool, the rewrite provenance report, privacy-safe fixture scaffolding, the voice profile contract compiler, the plugin package, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, reusable profile boundaries, format preservation, diagnosis-only requests, and exact constraint handling.
+Most of the time, that is enough. Add instructions only for hard constraints like exact word count, no dashes, a specific audience, multiple options, diagnosis-only mode, or a request to show what changed.
 
-## Dittobot Lab
+## Proof, Not Vibes
 
-Dittobot is intentionally small in normal use, but the repo ships a little lab bench for people who want to prove the editor is behaving.
+Dittobot's quality story is not "trust me, it feels good." The repo includes deterministic checks for voice preservation, protected facts, uncertainty, claim fidelity, source-only thought-dump inference, exact word counts, no-dash constraints, and anti-generic behavior.
 
-Probe local writing samples for observable voice signals without calling a model:
+The scorecard is intentionally boring: complete-suite gates, stable failure codes, hashes, package checks, and public-safe reporting. The public face can be fired up because the release machinery is disciplined. That is the dream: taste up front, receipts in the back.
 
-```bash
-python3 scripts/voice_probe.py samples/*.local.md
-```
+## The Useful Boring Stuff
 
-Use those signals to build a compact profile card:
+The manuals live in the wiki so the README can stay focused on the why and the examples:
 
-```bash
-python3 scripts/voice_profile.py compile samples/*.local.md \
-  --profile-id my-default \
-  --out voice-profile.local.json \
-  --card-out voice-profile.local.md
+- [Install](https://github.com/RegionallyFamous/dittobot/wiki/Install)
+- [Validation](https://github.com/RegionallyFamous/dittobot/wiki/Validation)
+- [Dittobot Lab](https://github.com/RegionallyFamous/dittobot/wiki/Dittobot-Lab)
+- [Voice Profiles](https://github.com/RegionallyFamous/dittobot/wiki/Voice-Profiles)
+- [Privacy And Fixtures](https://github.com/RegionallyFamous/dittobot/wiki/Privacy-And-Fixtures)
+- [Live Eval And Scorecards](https://github.com/RegionallyFamous/dittobot/wiki/Live-Eval-And-Scorecards)
+- [Release Checklist](https://github.com/RegionallyFamous/dittobot/wiki/Release-Checklist)
 
-python3 scripts/voice_profile.py validate voice-profile.local.json --strict
-python3 scripts/voice_profile.py render voice-profile.local.json --format prompt-md
-```
+## Research Thread
 
-Profiles transfer taste, not old facts. The JSON contract caps card size, evidence phrases, and boundaries so a profile stays portable instead of becoming a memory dump. Current draft facts, current audience, and explicit constraints win.
+The critique is worth taking seriously. Research on human-AI co-writing has found that writers care about preserving authentic voice and that personalization can help when it supports the writer rather than replacing them. Other work has found AI suggestions can homogenize writing toward dominant styles and reduce cultural nuance. Dittobot is a practical answer to that risk: keep the speed, reject the flattening.
 
-Use fact fences when a draft has material that must survive:
+- ["It was 80% me, 20% AI": Seeking Authenticity in Co-Writing with Large Language Models](https://arxiv.org/abs/2411.13032)
+- [AI Suggestions Homogenize Writing Toward Western Styles and Diminish Cultural Nuances](https://arxiv.org/abs/2409.11360)
 
-```text
-[[keep: Acme, 10 business days, not counsel]]
-[[claim: may need to send notice]]
-[[voice: haunted changelog]]
-[[avoid: Legal has approved, robust, seamless]]
-[[boundary: casual Slack voice does not apply to the customer notice]]
-```
+## About The Name
 
-Audit any source/rewrite pair without calling a model:
-
-```bash
-python3 scripts/audit.py \
-  --source "[[keep: 10 days]] [[claim: may be due]] I think notice may be due in 10 days." \
-  --rewrite "Notice is due in 10 days." \
-  --preserve-uncertainty
-```
-
-Failed audits include stable failure codes such as `lost_uncertainty`, `generic_ai_marker`, `lost_protected_fact`, and `unexpected_wrapper`, plus broader buckets such as `uncertainty_drift` or `fact_loss`.
-
-Generate a provenance report when you want to show what survived the edit and what got risky:
-
-```bash
-python3 scripts/rewrite_report.py \
-  --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days." \
-  --rewrite "Notice is due in 10 days." \
-  --preserve-uncertainty
-```
-
-The report is deterministic and model-free. It shows word-count movement, protected-fact status, voice-marker status, added numeric claims, generic AI markers, invented-detail markers, and stable failure codes.
-
-Turn a real, redacted bad rewrite into a fixture skeleton:
-
-```bash
-python3 scripts/failure_fixture.py \
-  --case-id thought_dump_example_99 \
-  --source-file source.local.md \
-  --failed-rewrite-file failed.local.md \
-  --desired-rewrite-file desired.local.md \
-  --redact-term "PrivateCo=[COMPANY_1]" \
-  --preserve-uncertainty
-```
-
-`failure_fixture.py` redacts obvious secrets/contact data, applies explicit replacements, audits the failed rewrite, audits the desired rewrite, and emits a public-safe `Case(...)` candidate. Prefer `--source-file`, `--failed-rewrite-file`, and `--desired-rewrite-file` for private drafts so text does not land in shell history. Use `redact_case.py` when you only need a redacted issue report:
-
-```bash
-python3 scripts/redact_case.py \
-  --case-id thought_dump_example_99 \
-  --source-file source.local.md \
-  --rewrite "bad but redacted output" \
-  --expected "desired passing rewrite" \
-  --voice "dry little joke" \
-  --replace "PrivateCo=[COMPANY_1]"
-```
-
-The workflow is simple: find a failure, audit it, convert it into a case, then teach Dittobot once instead of repeating the same warning forever.
-
-Run the optional live model smoke test when you have an API key. This is not a benchmark or a guarantee of voice fidelity; it is a sampled smoke test against one model/API configuration and the deterministic string/marker validators. By default, `--limit` samples across the suite instead of only taking the first cases, and source-only thought-dump fixtures exercise Dittobot's default inference path. A pass means no obvious fixture failures in that sample.
-
-```bash
-export OPENAI_API_KEY="sk-..."
-python3 scripts/live_eval.py --limit 10
-python3 scripts/live_eval.py --prompt-mode source_only --limit 5
-python3 scripts/live_eval.py --list-cases --prompt-mode source_only
-python3 scripts/live_eval.py --print-prompts --prompt-mode source_only --limit 2
-python3 scripts/live_eval.py --case legal_precision_01 --model "$OPENAI_MODEL"
-python3 scripts/live_eval.py --limit 20 --model gpt-5-mini --fail-fast --show-output-on-fail --max-total-tokens 50000 --save-jsonl live-eval-results.local.jsonl
-python3 scripts/live_eval.py --limit 5 --save-jsonl replayable.local.jsonl --save-raw-output
-python3 scripts/live_eval.py --replay-jsonl replayable.local.jsonl
-python3 scripts/live_report.py live-eval-results.local.jsonl --fail-under 0.95
-python3 scripts/live_report.py live-eval-results.local.jsonl --json
-```
-
-Use `--limit`, `--case`, `--prompt-mode source_only`, `--ensure-source-only`, `--fail-fast`, `--max-failures`, or `--max-total-tokens` to keep cost bounded and target the messy-default path. `--list-cases`, `--print-prompts`, and `--replay-jsonl` do not call the API. If `OPENAI_API_KEY` is not set, the live eval skips cleanly unless `--require-key` is passed. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored. They store hashes by default; add `--save-raw-source` or `--save-raw-output` only when the text is safe to keep locally. Replays require raw `output` records; API-error records without output are preserved as failures. `live_report.py` summarizes pass rates, usage, failure codes, buckets, and the top failed cases.
-
-Custom API URLs are blocked unless you pass `--allow-custom-api-url`; do that only for endpoints you trust with your bearer token and sample text.
-
-## Privacy
-
-Voice samples are personal. Dittobot does not require storing them in this repo. If you create local voice profiles, ledger files, sample files, or live-eval transcripts, prefer `*.local.md`, `*.local.json`, or `*.local.jsonl` so git ignores them. Do not publish anyone's samples unless every person represented in them is comfortable with publication.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributor guide, [SECURITY.md](SECURITY.md) for privacy/security reporting, and [RELEASE.md](RELEASE.md) for release validation.
-
-Contributions should make the skill sharper without making it bloated. The skill body is intentionally lean so normal use stays fast and token-responsible.
-
-Use the GitHub issue templates for bad rewrites or proposed regression cases. The best reports include a redacted source, the failed output, protected facts, voice markers, and what should have happened.
-
-Good changes usually do one of three things:
-
-- preserve voice more reliably;
-- prevent factual or tonal drift;
-- add regression coverage for a real writing failure mode.
-
-When adding regression cases, include:
-
-- source text with the bad pattern;
-- expected rewritten behavior;
-- protected facts and voice markers;
-- forbidden generic phrases or drift markers;
-- a short reason the case belongs.
-
-Before opening a PR, run:
-
-```bash
-python3 scripts/regression_100.py
-```
-
-If a change makes the skill more verbose without making it more reliable, it probably belongs in the test harness, not in `SKILL.md`.
+The name is a playful nod to Ditto from Pokemon: the trick is transformation without losing the original shape. Also, "ditto" is a perfectly normal English word, so please do not sue me, Nintendo. Dittobot is unofficial and unaffiliated, just a wink from one weird little tool to another.
 
 ## License
 

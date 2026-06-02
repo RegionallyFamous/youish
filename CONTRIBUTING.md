@@ -6,7 +6,7 @@ Dittobot improves when real writing failures become small, repeatable tests.
 
 - Put broad editing behavior in `SKILL.md` only when it should affect many tasks.
 - Put concrete failure cases in `scripts/regression_100.py`.
-- Put public adoption, install, lab-tooling, and philosophy changes in `README.md`.
+- Put public philosophy and examples in `README.md`; put install, validation, lab-tooling, and release runbooks in the GitHub wiki.
 - Put validation, install, and live-model tooling in `scripts/`.
 
 If a change makes normal skill use more verbose without making Dittobot more reliable, it probably belongs in the harness instead of `SKILL.md`.

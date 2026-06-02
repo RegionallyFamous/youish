@@ -46,6 +46,21 @@ jobs:
           python3 scripts/live_report.py "$transcript" | grep "legal_precision_01"
           python3 scripts/live_report.py "$transcript" --json | grep "lost_uncertainty"
           ! python3 scripts/live_report.py "$transcript" --fail-under 0.75
+          scorecard_transcript="$RUNNER_TEMP/scorecard-transcript.json"
+          python3 scripts/scorecard.py --transcript "$transcript" --fail-under-score 0 --format json > "$scorecard_transcript"
+          python3 - "$scorecard_transcript" <<'PY'
+          import json
+          import sys
+          payload = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert payload["schema_version"] == "dittobot.scorecard.v1"
+          assert payload["kind"] == "live_transcript"
+          assert payload["live_eval"]["records"] == 2
+          assert payload["score"]["case_pass_rate"] == 0.5
+          assert payload["results"]["failure_codes"]["lost_uncertainty"] == 1
+          PY
+          raw_transcript="$RUNNER_TEMP/raw.local.jsonl"
+          printf '%s\n' '{"case":"thought_dump_launch_note_01","output":"raw output should not be public","errors":[]}' > "$raw_transcript"
+          ! python3 scripts/scorecard.py --transcript "$raw_transcript" --public --fail-under-score 0 --format json
           replay="$RUNNER_TEMP/replay.local.jsonl"
           python3 - "$replay" <<'PY'
           import json
@@ -74,6 +89,31 @@ jobs:
           ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --validator "$RUNNER_TEMP/missing-validator.py" --require-validator
           python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --validator ""
           python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0
+          python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 | grep "Dittobot Public Eval Scorecard"
+          scorecard="$RUNNER_TEMP/scorecard.json"
+          python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --format json > "$scorecard"
+          python3 - "$scorecard" <<'PY'
+          import json
+          import sys
+          payload = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert payload["schema_version"] == "dittobot.scorecard.v1"
+          assert payload["suite"]["case_count"] == 100
+          assert payload["suite"]["family_count"] == 30
+          assert payload["score"]["status"] == "PASS"
+          assert payload["score"]["public_score"] == 100.0
+          assert payload["score"]["case_pass_rate"] == 1.0
+          assert payload["score"]["family_balanced_pass_rate"] == 1.0
+          assert payload["score"]["guardrail_floor"] == 1.0
+          assert payload["coverage"]["prompt_modes"]["explicit_rewrite"] == 90
+          assert payload["coverage"]["prompt_modes"]["source_only"] == 10
+          guardrails = {row["name"]: row["cases"] for row in payload["coverage"]["guardrails"]}
+          assert guardrails["voice_preservation"] == 38
+          assert guardrails["protected_facts"] == 33
+          assert guardrails["claim_fidelity"] == 26
+          assert guardrails["uncertainty_handling"] == 16
+          assert guardrails["source_only_default_inference"] == 10
+          assert payload["plugin"]["status"] == "PASS"
+          PY
 
       - name: Compile scripts
         run: python3 -m py_compile scripts/*.py

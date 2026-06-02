@@ -24,6 +24,7 @@ PACKAGE_FILES = (
     "scripts/regression_100.py",
     "scripts/redact_case.py",
     "scripts/rewrite_report.py",
+    "scripts/scorecard.py",
     "scripts/validate_skill.py",
     "scripts/voice_profile.py",
     "scripts/voice_probe.py",
