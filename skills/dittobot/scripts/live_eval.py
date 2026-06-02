@@ -95,6 +95,11 @@ def user_prompt(case: Case) -> str:
         lines.append(f"- Do not change these protected facts: {', '.join(case.protected)}")
     if case.required_claims:
         lines.append(f"- Preserve these required claims: {', '.join(case.required_claims)}")
+    if case.reader_actions:
+        lines.append(
+            "- Preserve these reader actions, owners, deadlines, or next steps: "
+            f"{', '.join(case.reader_actions)}"
+        )
     if case.forbid_assertions:
         lines.append(f"- Do not introduce these assertions: {', '.join(case.forbid_assertions)}")
     if case.forbid:

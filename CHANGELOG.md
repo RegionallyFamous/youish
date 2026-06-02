@@ -9,8 +9,10 @@ Nothing yet.
 - Add reader-action preservation as a first-class deterministic guardrail for asks, owners, deadlines, and next steps.
 - Add messy-dump contract tests for self-corrections and voice-density restraint without changing the public 100-case suite size.
 - Thread reader-action checks through audit, rewrite-report, case-lab, and failure-fixture tools.
+- Thread reader-action requirements through optional live-eval prompts and contract tests.
 - Tighten SKILL.md while keeping it under the public word budget.
 - Verify release scorecard skill and validator hashes against the shipped plugin ZIP contents.
+- Strengthen release CI so scorecard hash negative tests reach the intended plugin mismatch guard.
 
 ## 0.2.6 - 2026-06-02
 

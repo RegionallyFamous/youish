@@ -64,6 +64,23 @@ jobs:
           python3 scripts/voice_profile.py compile --sample "This draft is not bad. It just walks into the room and apologizes for existing. I want the useful bit without the meeting oatmeal." --profile-id ci-profile --out "$profile"
           python3 scripts/voice_profile.py validate "$profile" | grep "Status: PASS"
           python3 scripts/voice_profile.py render "$profile" --format prompt-md | grep "Use this as editing taste only"
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path("scripts").resolve()))
+          from live_eval import user_prompt
+          from regression_100 import Case
+
+          prompt = user_prompt(Case(
+              id="reader_action_prompt_ci",
+              source="The fix is live. If it still fails, send the job ID.",
+              rewrite="The fix is live. If it still fails, send the job ID.",
+              must=("fix is live",),
+              reader_actions=("send the job ID",),
+          ))
+          assert "Preserve these reader actions" in prompt
+          assert "send the job ID" in prompt
+          PY
           python3 scripts/redact_case.py --case-id redacted_ci_01 --source "Nick at nick@example.com has sk-abc123456789012345678 and a weird launch note." --rewrite "Nick shipped it." --expected "Person A still needs the weird launch note fixed." --replace "Nick=Person A" --must "launch note" --json | grep '"status": "OK"'
           python3 scripts/failure_fixture.py --case-id fixture_ci_01 --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days. Contact nick@example.com with sk-abc123456789012345678." --failed-rewrite "Notice is due in 10 days." --desired-rewrite "I think notice may be due in 10 days, haunted changelog and all." --preserve-uncertainty --allow-inline-private --json | grep '"status": "READY"'
           python3 scripts/failure_fixture.py --case-id reader_action_ci_01 --source "The fix is live. If it still fails, send the job ID." --failed-rewrite "The fix is live." --desired-rewrite "The fix is live. If it still fails, send the job ID." --reader-action "send the job ID" --allow-inline-private --json | grep '"reader_actions":'
@@ -221,6 +238,7 @@ jobs:
           payload["subject"]["skill_sha256"] = "0" * 64
           json.dump(payload, open(path, "w", encoding="utf-8"), indent=2)
           PY
+          python3 scripts/write_checksums.py "$RUNNER_TEMP/release-hash-mismatch/dittobot-skill-v0.2.7.zip" "$RUNNER_TEMP/release-hash-mismatch/dittobot-plugin-v0.2.7.zip" "$RUNNER_TEMP/release-hash-mismatch/dittobot-scorecard-v0.2.7.json" --output "$RUNNER_TEMP/release-hash-mismatch/SHA256SUMS"
           ! python3 scripts/check_release_assets.py "$RUNNER_TEMP/release-hash-mismatch" --version 0.2.7
 
       - name: Compile scripts

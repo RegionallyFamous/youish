@@ -2041,6 +2041,7 @@ def run_reader_action_contract_tests() -> list[str]:
                 protected=("import fix", "failed rows", "job ID"),
                 preserve_voice=("screenshot pilgrimage",),
                 required_claims=("retry failed rows", "send the job ID"),
+                reader_actions=("send the job ID",),
                 ordered_terms=("import fix", "retry failed rows", "job ID"),
                 forbid=("seamless", "streamline", "support note maybe"),
             ),
@@ -2062,8 +2063,9 @@ def run_reader_action_contract_tests() -> list[str]:
                 must=("import fix", "retry failed rows", "send the job ID"),
                 protected=("import fix", "failed rows", "job ID"),
                 required_claims=("retry failed rows", "send the job ID"),
+                reader_actions=("send the job ID",),
             ),
-            "missing required terms",
+            "missing reader actions",
         ),
         (
             "internal recap keeps owner and action",
@@ -2082,6 +2084,7 @@ def run_reader_action_contract_tests() -> list[str]:
                 protected=("Luis", "DNS change", "Finance", "Friday"),
                 preserve_voice=("haunted sticker",),
                 required_claims=("Luis owns the DNS change", "Friday moved"),
+                reader_actions=("Luis owns the DNS change", "I own telling Finance"),
                 ordered_terms=("Luis", "DNS change", "Finance", "Friday"),
             ),
             None,
@@ -2103,8 +2106,9 @@ def run_reader_action_contract_tests() -> list[str]:
                 protected=("Luis", "DNS change", "Finance", "Friday"),
                 preserve_voice=("haunted sticker",),
                 required_claims=("Luis owns the DNS change", "Friday moved"),
+                reader_actions=("Luis owns the DNS change", "I own telling Finance"),
             ),
-            "missing required terms",
+            "missing reader actions",
         ),
     ]
     failures: list[str] = []
