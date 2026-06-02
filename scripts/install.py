@@ -17,11 +17,26 @@ from package_files import PACKAGE_FILES
 
 
 def backup_path(target: Path) -> Path:
-    return target.with_name(f"{target.name}.backup.{int(time.time())}")
+    while True:
+        candidate = target.with_name(f"{target.name}.backup.{time.time_ns()}")
+        if not candidate.exists() and not candidate.is_symlink():
+            return candidate
+
+
+def temp_copy_path(target: Path) -> Path:
+    return target.with_name(f".{target.name}.tmp.{int(time.time())}.{os.getpid()}")
 
 
 def is_repo_symlink(target: Path, repo: Path) -> bool:
     return target.is_symlink() and target.resolve() == repo
+
+
+def preflight_package(repo: Path) -> None:
+    missing = [rel for rel in PACKAGE_FILES if not (repo / rel).exists()]
+    if missing:
+        raise SystemExit(
+            "Cannot install: package file(s) missing: " + ", ".join(missing)
+        )
 
 
 def install_copy(repo: Path, target: Path) -> None:
@@ -50,21 +65,34 @@ def main() -> int:
     repo = Path(__file__).resolve().parents[1]
     target = Path(args.install_dir).expanduser()
     target.parent.mkdir(parents=True, exist_ok=True)
+    temp_target = temp_copy_path(target) if args.copy else None
 
-    if is_repo_symlink(target, repo) and not args.copy:
-        print(f"Already installed as symlink: {target}", flush=True)
-    else:
-        if target.exists() or target.is_symlink():
-            backup = backup_path(target)
-            shutil.move(str(target), str(backup))
-            print(f"Backed up existing install to: {backup}", flush=True)
-
-        if args.copy:
-            install_copy(repo, target)
-            print(f"Installed copy: {target}", flush=True)
+    try:
+        if is_repo_symlink(target, repo) and not args.copy:
+            print(f"Already installed as symlink: {target}", flush=True)
         else:
-            target.symlink_to(repo, target_is_directory=True)
-            print(f"Installed symlink: {target} -> {repo}", flush=True)
+            if args.copy:
+                preflight_package(repo)
+                assert temp_target is not None
+                if temp_target.exists():
+                    shutil.rmtree(temp_target)
+                install_copy(repo, temp_target)
+
+            if target.exists() or target.is_symlink():
+                backup = backup_path(target)
+                shutil.move(str(target), str(backup))
+                print(f"Backed up existing install to: {backup}", flush=True)
+
+            if args.copy:
+                assert temp_target is not None
+                shutil.move(str(temp_target), str(target))
+                print(f"Installed copy: {target}", flush=True)
+            else:
+                target.symlink_to(repo, target_is_directory=True)
+                print(f"Installed symlink: {target} -> {repo}", flush=True)
+    finally:
+        if temp_target is not None and temp_target.exists():
+            shutil.rmtree(temp_target)
 
     result = subprocess.run(
         [

@@ -64,6 +64,7 @@ It:
 - uses fast editorial gates by default and expands into a 20-pass checklist for hard work;
 - includes a deterministic 100-case fixture harness plus an optional live model smoke test;
 - ships a local rewrite audit tool for checking arbitrary source/rewrite pairs without calling a model;
+- ships a rewrite provenance report so users can see what was preserved, lost, or riskily added;
 - includes a case lab for turning real bad rewrites into focused regression fixtures;
 - supports compact reusable voice profile cards, fact fences, and local voice probes.
 
@@ -149,13 +150,22 @@ python3 scripts/install.py --copy
 
 Then invoke it as `$dittobot`.
 
-What gets installed: `SKILL.md`, `agents/openai.yaml`, optional references, and helper scripts for validation, installation, ad hoc rewrite audits, regression-case scaffolding, voice probing, live reporting, and optional live eval. Normal Dittobot use does not run or load the scripts or references.
+What gets installed: `SKILL.md`, `agents/openai.yaml`, icon assets, optional references, and helper scripts for validation, installation, ad hoc rewrite audits, rewrite provenance reports, regression-case scaffolding, voice probing, live reporting, and optional live eval. Normal Dittobot use does not run or load the scripts or references.
 
 Check that your installed skill still matches the repo:
 
 ```bash
 python3 scripts/check_install.py
 ```
+
+Build a local Codex plugin package when you want a plugin-style distribution artifact:
+
+```bash
+python3 scripts/build_plugin.py
+python3 scripts/check_plugin_package.py dist/dittobot-plugin --version 0.2.0
+```
+
+The generated package lives in `dist/dittobot-plugin` and is ignored by git. It contains `.codex-plugin/plugin.json`, Codex UI metadata, original Dittobot icon assets, and the installable skill under `skills/dittobot/`.
 
 ## Use
 
@@ -242,14 +252,20 @@ Run the deterministic fixture validator:
 python3 scripts/validate_skill.py
 python3 scripts/regression_100.py
 python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
+python3 scripts/rewrite_report.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --protected "10 days" --preserve-uncertainty
 python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
 python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing."
+python3 scripts/build_plugin.py --version 0.2.0 --validator ""
+python3 scripts/check_plugin_package.py dist/dittobot-plugin --version 0.2.0
 python3 -m py_compile scripts/*.py
 tmpdir="$(mktemp -d)"
 mkdir -p "$tmpdir/codex-skills"
 ln -s "$(pwd)" "$tmpdir/codex-skills/dittobot"
 python3 scripts/check_install.py --install-dir "$tmpdir/codex-skills/dittobot"
 python3 scripts/install.py --install-dir "$tmpdir/codex-skills/dittobot-installed"
+python3 scripts/install.py --install-dir "$tmpdir/codex-skills/dittobot-installed"
+python3 scripts/install.py --copy --install-dir "$tmpdir/codex-skills/dittobot-installed-copy"
+python3 scripts/check_install.py --install-dir "$tmpdir/codex-skills/dittobot-installed-copy"
 ```
 
 Expected result:
@@ -259,13 +275,17 @@ Skill repo validation passed.
 VALIDATOR SELF-TESTS: PASS
 TOTAL: 100/100 passed
 PASS | source_words=9 rewrite_words=9
+# Rewrite Report
 # Review before committing: keep fixtures redacted and focused.
 # Voice Probe
+Plugin package check passed: ...
 Installed skill matches repo (symlink): ...
 Installed symlink: ...
+Installed copy: ...
+Installed skill matches repo (copy): ...
 ```
 
-This validates the 100 primary fixtures, the validator itself, profile-boundary contracts, mutation checks against bad outputs, the ad hoc audit tool, the case scaffold generator, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, reusable profile boundaries, format preservation, diagnosis-only requests, and exact constraint handling.
+This validates the 100 primary fixtures, the validator itself, profile-boundary contracts, mutation checks against bad outputs, the ad hoc audit tool, the rewrite provenance report, the case scaffold generator, the plugin package, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, reusable profile boundaries, format preservation, diagnosis-only requests, and exact constraint handling.
 
 ## Dittobot Lab
 
@@ -325,6 +345,17 @@ python3 scripts/audit.py \
 ```
 
 Failed audits include stable failure codes such as `lost_uncertainty`, `generic_ai_marker`, `lost_protected_fact`, and `unexpected_wrapper`, plus broader buckets such as `uncertainty_drift` or `fact_loss`.
+
+Generate a provenance report when you want to show what survived the edit and what got risky:
+
+```bash
+python3 scripts/rewrite_report.py \
+  --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days." \
+  --rewrite "Notice is due in 10 days." \
+  --preserve-uncertainty
+```
+
+The report is deterministic and model-free. It shows word-count movement, protected-fact status, voice-marker status, added numeric claims, generic AI markers, invented-detail markers, and stable failure codes.
 
 Turn a real, redacted bad rewrite into a fixture skeleton:
 

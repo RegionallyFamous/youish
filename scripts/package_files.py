@@ -7,6 +7,8 @@ from __future__ import annotations
 PACKAGE_FILES = (
     "SKILL.md",
     "agents/openai.yaml",
+    "assets/icon-large.svg",
+    "assets/icon-small.svg",
     "references/fact-fences.md",
     "references/voice-profile-cards.md",
     "scripts/audit.py",
@@ -19,6 +21,7 @@ PACKAGE_FILES = (
     "scripts/live_report.py",
     "scripts/package_files.py",
     "scripts/regression_100.py",
+    "scripts/rewrite_report.py",
     "scripts/validate_skill.py",
     "scripts/voice_probe.py",
 )

@@ -11,8 +11,13 @@
 - Add profile-contract self-tests for same-source/different-profile behavior, profile fact leakage, evidence phrase overuse, and boundary overrides.
 - Add offline `live_eval.py --replay-jsonl` validation for saved raw-output transcripts.
 - Save API-error transcript records when live eval fails before a model output.
+- Add deterministic Codex plugin package builder and package verifier.
+- Add Codex UI icon assets and wire them into skill and plugin metadata.
+- Add `scripts/rewrite_report.py` for model-free rewrite provenance reports.
 - Add reusable fact-fence and voice-profile-card references.
 - Add package-file manifest sharing between install drift checks and repo validation.
+- Add stale-file detection for copied installs and stage copy installs before replacing the current skill.
+- Add a progressive-disclosure word budget check for `SKILL.md`.
 - Add optional live model smoke testing with safer API URL and transcript handling.
 - Make live eval reporting track attempted, passed, not-run, and usage totals instead of counting stopped cases as passes.
 - Make live-eval saved transcripts hash-only by default, with explicit raw source/output opt-ins.

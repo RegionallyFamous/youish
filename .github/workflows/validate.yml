@@ -28,6 +28,8 @@ jobs:
           python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
           python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted" | grep "sample_case_01"
           python3 scripts/audit.py --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days, haunted changelog and all." --preserve-uncertainty --json | grep '"status": "PASS"'
+          { python3 scripts/rewrite_report.py --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days." --rewrite "Notice is due in 10 days." --preserve-uncertainty || true; } | grep "lost_uncertainty"
+          python3 scripts/rewrite_report.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --protected "10 days" --preserve-uncertainty --json | grep '"status": "PASS"'
           python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing." | grep "Voice Probe"
           transcript="$RUNNER_TEMP/live.local.jsonl"
           printf '%s\n' \
@@ -60,6 +62,12 @@ jobs:
           missing_output="$RUNNER_TEMP/missing-output.local.jsonl"
           printf '%s\n' '{"case":"thought_dump_launch_note_01","model":"gpt-5.2"}' > "$missing_output"
           ! python3 scripts/live_eval.py --replay-jsonl "$missing_output"
+          ! python3 scripts/build_plugin.py --version not-semver --validator ""
+          mkdir -p "$RUNNER_TEMP/not-a-plugin"
+          ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/not-a-plugin" --validator ""
+          ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --validator "$RUNNER_TEMP/missing-validator.py" --require-validator
+          python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --validator ""
+          python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0
 
       - name: Compile scripts
         run: python3 -m py_compile scripts/*.py
@@ -73,6 +81,13 @@ jobs:
       - name: Check installer
         run: |
           python3 scripts/install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot"
+          python3 scripts/install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot"
+          python3 scripts/install.py --copy --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
+          python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
+          printf 'stale file\n' > "$RUNNER_TEMP/codex-skills-installed/dittobot-copy/README.md"
+          ! python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
+          python3 scripts/install.py --copy --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
+          python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
 
       - name: Verify live eval skip path
         env:

@@ -14,8 +14,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from package_files import PACKAGE_FILES
 
 
+IGNORED_EXTRA_NAMES = {".DS_Store"}
+IGNORED_EXTRA_SUFFIXES = {".pyc"}
+
+
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def package_files_in(path: Path) -> set[str]:
+    files: set[str] = set()
+    for item in path.rglob("*"):
+        if not item.is_file():
+            continue
+        rel = item.relative_to(path)
+        if any(part == "__pycache__" for part in rel.parts):
+            continue
+        if item.name in IGNORED_EXTRA_NAMES or item.suffix in IGNORED_EXTRA_SUFFIXES:
+            continue
+        files.add(rel.as_posix())
+    return files
 
 
 def main() -> int:
@@ -37,21 +55,33 @@ def main() -> int:
 
     mismatches: list[str] = []
     missing: list[str] = []
+    source_missing: list[str] = []
+    unexpected: list[str] = []
 
     for rel in PACKAGE_FILES:
         repo_file = repo / rel
         installed_file = installed / rel
-        if not installed_file.exists():
+        if not repo_file.exists():
+            source_missing.append(rel)
+        elif not installed_file.exists():
             missing.append(rel)
         elif digest(repo_file) != digest(installed_file):
             mismatches.append(rel)
 
-    if missing or mismatches:
+    if not install_path.is_symlink():
+        expected = set(PACKAGE_FILES)
+        unexpected = sorted(package_files_in(installed) - expected)
+
+    if source_missing or missing or mismatches or unexpected:
         print(f"Installed skill differs from repo: {installed}")
+        for rel in source_missing:
+            print(f"  source missing: {rel}")
         for rel in missing:
             print(f"  missing: {rel}")
         for rel in mismatches:
             print(f"  mismatch: {rel}")
+        for rel in unexpected:
+            print(f"  unexpected: {rel}")
         print("\nPrefer a symlink install to avoid drift:")
         print("  mv ~/.codex/skills/dittobot ~/.codex/skills/dittobot.backup.$(date +%s)")
         print(f"  ln -s {repo} ~/.codex/skills/dittobot")
