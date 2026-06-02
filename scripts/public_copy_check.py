@@ -27,8 +27,8 @@ REQUIRED_PHRASES = (
     "teach it taste",
     "not a ghostwriter",
     "voice-preserving editor",
-    "It preserves claims, stance, uncertainty",
-    "It refuses unsupported facts",
+    "It keeps your claims, stance, uncertainty",
+    "It refuses fake facts",
     "When disclosure matters",
     "Use $skill-installer to install Dittobot",
     "A risograph-style Dittobot workshop",
@@ -146,20 +146,21 @@ def check_process_examples(markdown: str, errors: list[str]) -> None:
     watch_start = markdown.find("## Watch It Work")
     next_section = markdown.find("\n## ", watch_start + 1) if watch_start != -1 else -1
     watch_section = markdown[watch_start:next_section if next_section != -1 else None]
-    process_label = "What survives/changes:"
-    notice_count = watch_section.count(process_label)
+    process_label_pattern = re.compile(r"^What Dittobot (?:protects|notices):$", re.MULTILINE)
+    notices = list(process_label_pattern.finditer(watch_section))
+    notice_count = len(notices)
     source_count = watch_section.count("Source:")
     rewrite_count = watch_section.count("Rewrite:")
     if notice_count < 4:
         fail(f"README must show at least 4 in-process examples; found {notice_count}", errors)
     if not (source_count == notice_count == rewrite_count):
         fail(
-            f"README process examples must have matching Source, {process_label}, and Rewrite blocks; "
+            "README process examples must have matching Source, What Dittobot protects/notices, and Rewrite blocks; "
             f"found Source={source_count}, notices={notice_count}, Rewrite={rewrite_count}",
             errors,
         )
 
-    blocks = watch_section.split(process_label)[1:]
+    blocks = process_label_pattern.split(watch_section)[1:]
     for index, block in enumerate(blocks, start=1):
         before_rewrite = block.split("Rewrite:", 1)[0]
         bullet_count = sum(1 for line in before_rewrite.splitlines() if line.startswith("- "))

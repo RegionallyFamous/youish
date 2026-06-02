@@ -19,17 +19,17 @@ Dittobot is a Codex skill that edits from your source instead of inventing a new
 
 It is not a ghostwriter. It is a voice-preserving editor: your claims, your taste, your stance, your rhythm, just cleaned up enough that the reader does not have to excavate the point with a tiny shovel.
 
-It also checks the reader's job. The clean version should make the point, stakes, limits, and next action clear after one pass.
+It also thinks about what the reader needs: the point, the stakes, the limits, and what to do next.
 
-For hard work, it expands into a silent 20-pass editorial loop. For proof, the repo ships a 100-case regression suite, model-free rewrite audits, privacy-first failure fixtures, compact voice profiles, fact fences, and public release scorecards.
+For heavier edits, it has a stricter internal checklist and tests for the promises people actually care about: facts stay put, uncertainty stays uncertainty, constraints get obeyed, and the weird good phrase survives.
 
 Normal use is still simple: paste the mess and get the clean version.
 
-Voice-faithful means something testable here:
+Voice-faithful is not a vibe here:
 
-- It preserves claims, stance, uncertainty, rhythm, distinctive phrases, and reader action.
-- It refuses unsupported facts, invented brands, fake certainty, extra jokes, and generic polish that says less.
-- It proves those promises with deterministic fixtures, mutation checks, package validation, and release scorecards.
+- It keeps your claims, stance, uncertainty, rhythm, distinctive phrases, and reader action.
+- It refuses fake facts, fake certainty, extra jokes, and generic polish that says less.
+- The tests try to break those promises before a release does.
 
 ## The Point
 
@@ -53,7 +53,7 @@ Source:
 ok the launch note is somehow both too long and says nothing. what i actually mean is we fixed the importer bug, people can retry failed rows now, and i need it to sound calm but not like a haunted changelog
 ```
 
-What survives/changes:
+What Dittobot protects:
 
 - The facts are "importer bug fixed" and "failed rows can be retried."
 - The voice marker worth keeping is "haunted changelog."
@@ -72,7 +72,7 @@ Source:
 In today's rapidly evolving landscape, our robust platform empowers teams to unlock seamless collaboration and drive meaningful impact.
 ```
 
-What survives/changes:
+What Dittobot notices:
 
 - The sentence sounds confident but says almost nothing.
 - Inventing specifics would make it worse.
@@ -91,7 +91,7 @@ Source:
 This draft is not bad. It just walks into the room and immediately apologizes for existing.
 ```
 
-What survives/changes:
+What Dittobot protects:
 
 - The image is the point.
 - A smoother rewrite would be worse.
@@ -110,7 +110,7 @@ Source:
 I think we probably need to send notice within 10 business days, but I am not counsel and the clause had weird carveouts.
 ```
 
-What survives/changes:
+What Dittobot protects:
 
 - "Probably," "I think," and "not counsel" are precision, not clutter.
 - The rewrite must not turn uncertainty into legal certainty.
@@ -129,7 +129,7 @@ Source:
 I am a little angry that people saw bad AI writing and decided the answer was banning the tool, but I am also genuinely excited because we can teach it taste instead of pretending pencils are holy now.
 ```
 
-What survives/changes:
+What Dittobot protects:
 
 - The anger and hope both matter.
 - The rewrite should be sharp without turning into a personal attack.
@@ -193,62 +193,21 @@ Use $dittobot on this:
 
 That is the point. Drop in the stream of consciousness; get back the version that sounds like you after sleep, coffee, and one more pass.
 
-Choose one install path:
+You do not need to say "preserve my voice," "do not add facts," or "keep uncertainty." That is the job. Add instructions only when you mean it: exact word count, no dashes, a specific audience, options, diagnosis-only, or show what changed.
 
-| Path | Use When |
-|---|---|
-| Codex prompt | You want the streamlined Codex skill install. |
-| Terminal fallback | `$skill-installer` is unavailable and you are comfortable with Terminal. |
-| Pinned GitHub CLI | You want an explicit tagged skill install through `gh`. |
-| Codex plugin source | You want Dittobot as a Codex plugin package. |
-| Open skills CLI | You use skill-aware agents or ecosystems that support the shared `skills` installer. |
-
-Codex prompt:
-
-```text
-Use $skill-installer to install Dittobot from GitHub repo RegionallyFamous/dittobot. Use path "." and install it as "dittobot".
-```
-
-Terminal fallback:
+If the Codex prompt is unavailable, this one-line install does the same basic job:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/v0.2.7/install.sh | DITTOBOT_REF=v0.2.7 bash
 ```
 
-Pinned GitHub CLI:
-
-```bash
-gh skill install RegionallyFamous/dittobot skills/dittobot --agent codex --scope user --pin v0.2.7
-```
-
-Codex plugin source:
-
-```bash
-codex plugin marketplace add RegionallyFamous/dittobot --ref v0.2.7
-codex plugin add dittobot@dittobot
-```
-
-Open skills CLI:
-
-```bash
-npx skills add RegionallyFamous/dittobot
-```
-
-The plugin command means: install the plugin named `dittobot` from the marketplace source named `dittobot`. For normal skill use, the Codex prompt path is the one to use.
-
-The open skills CLI path is for skill-aware agents and ecosystems that use the shared `skills` installer. For Codex, use the Codex prompt path first.
-
-The terminal fallback requires `curl`, `tar`, and Python 3. It installs a copy, backs up an existing Dittobot install, verifies itself, and does not use `sudo`.
-
-Uploadable assets live in [Releases](https://github.com/RegionallyFamous/dittobot/releases): skill ZIP, plugin ZIP, public scorecard, and checksums.
-
-Most of the time, the default prompt is enough. Add instructions only for hard constraints like exact word count, no dashes, a specific audience, options, diagnosis-only mode, or a request to show what changed.
+Other install paths are in the [Install wiki](https://github.com/RegionallyFamous/dittobot/wiki/Install) for GitHub CLI, Codex plugin packaging, release assets, and open-skills ecosystems.
 
 ## Proof, Not Vibes
 
-Dittobot's quality story is not "trust me, it feels good." The repo checks voice preservation, protected facts, uncertainty, claim fidelity, exact word counts, no-dash constraints, and anti-generic behavior.
+Dittobot's quality story is not "trust me, it feels good."
 
-The tests check the boring things that matter in real writing: did it keep the facts, keep the voice marker, avoid fake certainty, obey the constraint, and return something useful?
+Dittobot has tests for the stuff bad AI writing usually breaks: facts, uncertainty, voice markers, no-dash rules, exact word counts, reader actions, and empty buzzword paste.
 
 This does not prove literary taste. It proves Dittobot keeps the constraints it claims to protect: facts, uncertainty, length, format, and anti-generic behavior.
 
@@ -262,9 +221,7 @@ This does not prove literary taste. It proves Dittobot keeps the constraints it 
 | Respect constraints | Exact word count, no-dash, format, wrapper, and paragraph-shape checks |
 | Turn notes into usable text | Source-only thought-dump cases with artifact cleanup and reader-action checks |
 
-The scorecard is intentionally boring: complete-suite gates, stable failure codes, hashes, package checks, marketplace checks, and public-safe reporting.
-
-Taste up front. Receipts in the back.
+The scorecard is intentionally boring: full-suite gates, stable failure codes, hashes, package checks, marketplace checks, and public-safe reporting. That is the point. Taste up front. Receipts in the back.
 
 ## The Useful Boring Stuff
 
@@ -287,8 +244,6 @@ The critique is worth taking seriously. Research on human-AI co-writing has foun
 - [AI Suggestions Homogenize Writing Toward Western Styles and Diminish Cultural Nuances](https://arxiv.org/abs/2409.11360): suggestion systems can flatten voice, so voice preservation has to be a first-class requirement.
 - [Digital.gov: Principles of plain language](https://digital.gov/guides/plain-language/principles): write for the audience, make the useful action clear, and cut clutter.
 - [CPSC: Plain Language Principles](https://www.cpsc.gov/About-CPSC/Policies-Statements-and-Directives/plain-language-principles): plain writing is not dumbed-down writing. It is respect for the reader's time.
-- [OpenAI Codex skills](https://developers.openai.com/codex/skills): skills package reusable instructions, resources, and optional scripts; plugins are the installable distribution path for reusable Codex workflows.
-- [skills.sh docs](https://skills.sh/docs): open skills can also be discovered and installed through `npx skills add owner/repo`.
 
 ## About The Name
 
