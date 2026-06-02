@@ -47,6 +47,34 @@ def main() -> int:
     metadata = json.loads(read("metadata.json"))
     if metadata.get("version") != version:
         errors.append(f"metadata.json version is {metadata.get('version')}, expected {version}")
+    skills_sh = metadata.get("skillsSh", {})
+    required_page_fields = {
+        "Breadcrumb",
+        "Name",
+        "Topic chips",
+        "Installation",
+        "Summary",
+        "SKILL.md",
+        "Related skills",
+        "Installs",
+        "Repository",
+        "GitHub Stars",
+        "First Seen",
+        "Security Audits",
+    }
+    actual_page_fields = {
+        item.get("field")
+        for item in skills_sh.get("pageFields", [])
+        if isinstance(item, dict)
+    }
+    missing_page_fields = sorted(required_page_fields - actual_page_fields)
+    if missing_page_fields:
+        errors.append(
+            "metadata.json skillsSh.pageFields is missing: "
+            + ", ".join(missing_page_fields)
+        )
+    if not skills_sh.get("summaryMarkdown"):
+        errors.append("metadata.json skillsSh.summaryMarkdown is missing")
     expected_npx = "npx skills add https://github.com/RegionallyFamous/youish --skill youish"
     expected_gh = (
         "gh skill install RegionallyFamous/youish skills/youish "
@@ -69,7 +97,7 @@ def main() -> int:
     ):
         if command not in readme:
             errors.append(f"{label} is missing or not pinned exactly: {command}")
-    install_command = metadata.get("skillsSh", {}).get("installCommand")
+    install_command = skills_sh.get("installCommand")
     if install_command != expected_npx:
         errors.append(
             "metadata.json skillsSh.installCommand is "

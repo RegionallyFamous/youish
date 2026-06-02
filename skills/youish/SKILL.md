@@ -4,7 +4,7 @@ description: Rewrite, edit, tighten, punch up, or diagnose user prose while pres
 license: GPL-2.0-or-later
 metadata:
   author: Regionally Famous
-  version: "0.3.3"
+  version: "0.3.4"
 ---
 
 # Youish

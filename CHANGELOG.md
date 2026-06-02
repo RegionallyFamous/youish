@@ -4,6 +4,10 @@
 
 Nothing yet.
 
+## 0.3.4 - 2026-06-02
+
+- Fix the verified release-ZIP installer by normalizing the GitHub release asset URL to the lowercase repository path required by public downloads.
+
 ## 0.3.3 - 2026-06-02
 
 - Add option-diversity validation so tone options cannot pass as the same template with different labels.

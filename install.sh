@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="${YOUISH_REPO:-RegionallyFamous/youish}"
-REF="${YOUISH_REF:-v0.3.3}"
+REF="${YOUISH_REF:-v0.3.4}"
 SOURCE="${YOUISH_SOURCE:-tag-archive}"
 
 if [ -n "${YOUISH_ARCHIVE_URL:-}" ]; then
@@ -36,11 +36,12 @@ trap cleanup EXIT
 
 if [ "$SOURCE" = "release-zip" ]; then
   if [[ "$REF" != v[0-9]* ]]; then
-    printf 'YOUISH_SOURCE=release-zip requires YOUISH_REF to be a release tag such as v0.3.3.\n' >&2
+    printf 'YOUISH_SOURCE=release-zip requires YOUISH_REF to be a release tag such as v0.3.4.\n' >&2
     exit 1
   fi
   version="${REF#v}"
-  release_base="${YOUISH_RELEASE_URL:-https://github.com/${REPO}/releases/download/${REF}}"
+  release_repo="$(printf '%s' "$REPO" | tr '[:upper:]' '[:lower:]')"
+  release_base="${YOUISH_RELEASE_URL:-https://github.com/${release_repo}/releases/download/${REF}}"
   asset_name="youish-skill-v${version}.zip"
   asset="$tmpdir/$asset_name"
   sums="$tmpdir/SHA256SUMS"

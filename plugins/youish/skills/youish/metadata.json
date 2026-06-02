@@ -1,7 +1,7 @@
 {
   "name": "youish",
   "displayName": "Youish",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "organization": "Regionally Famous",
   "date": "June 2026",
   "abstract": "Voice-faithful rewriting for AI agents, designed to preserve a writer's claims, stance, rhythm, uncertainty, useful weirdness, and exact constraints while removing clutter and generic AI polish. Includes compact runtime instructions, optional quality-gate references, and deterministic regression checks for facts, quotes, identity markers, output shape, source-only thought dumps, and live-eval integrity.",
@@ -16,6 +16,7 @@
       "Writing",
       "Editing",
       "Copywriting",
+      "Marketing",
       "Agent workflows"
     ],
     "agents": [
@@ -36,6 +37,81 @@
       "Includes deterministic regression checks for fact drift, invented details, unsupported entities, cultural voice flattening, option diversity, wrappers, word counts, output shape, and live scorecard integrity.",
       "Uses progressive disclosure: compact runtime guidance, optional quality gates, and scripts loaded only for validation or profile work."
     ],
+    "summaryMarkdown": "**Voice-faithful rewriting and editing for messy drafts, notes, emails, posts, captions, docs, and reusable voice profiles.**\n\n- Preserves the user's claims, stance, uncertainty, rhythm, humor, useful weirdness, and exact constraints.\n- Turns rough notes, rants, fragments, and corporate fog into usable prose without inventing facts or flattening voice.\n- Includes deterministic regression checks for fact drift, invented details, unsupported entities, cultural voice flattening, option diversity, wrappers, word counts, output shape, and live scorecard integrity.\n- Uses progressive disclosure: compact runtime guidance, optional quality gates, and scripts loaded only for validation or profile work.",
+    "pageFields": [
+      {
+        "field": "Breadcrumb",
+        "status": "skills.sh-generated",
+        "youishValue": "skills / regionallyfamous / youish / youish",
+        "source": "Repository owner, repository name, and SKILL.md frontmatter name."
+      },
+      {
+        "field": "Name",
+        "status": "source-controlled",
+        "youishValue": "youish",
+        "source": "SKILL.md frontmatter name."
+      },
+      {
+        "field": "Topic chips",
+        "status": "skills.sh-generated",
+        "youishValue": "Writing, Editing, Copywriting, Marketing, Agent workflows",
+        "source": "Signals from SKILL.md, metadata.json skillsSh.topics, and Skills.sh topic classification."
+      },
+      {
+        "field": "Installation",
+        "status": "skills.sh-generated from source",
+        "youishValue": "npx skills add https://github.com/RegionallyFamous/youish --skill youish",
+        "source": "GitHub repository plus skill slug."
+      },
+      {
+        "field": "Summary",
+        "status": "source-controlled",
+        "youishValue": "Voice-faithful rewriting and editing for messy drafts, notes, emails, posts, captions, docs, and reusable voice profiles.",
+        "source": "metadata.json skillsSh.summary and summaryBullets."
+      },
+      {
+        "field": "SKILL.md",
+        "status": "source-controlled",
+        "youishValue": "Voice-preservation contract, when-to-apply guidance, defaults, intake, modes, quality gates, anti-generic rules, output rules, and validation hooks.",
+        "source": "SKILL.md body."
+      },
+      {
+        "field": "Related skills",
+        "status": "skills.sh-generated",
+        "youishValue": "Generated from indexed topic overlap when Skills.sh has enough related skills.",
+        "source": "Skills.sh catalog and topic graph."
+      },
+      {
+        "field": "Installs",
+        "status": "skills.sh-generated",
+        "youishValue": "Generated from anonymous skills CLI install telemetry.",
+        "source": "Skills.sh telemetry."
+      },
+      {
+        "field": "Repository",
+        "status": "skills.sh-generated from source",
+        "youishValue": "regionallyfamous/youish",
+        "source": "GitHub repository."
+      },
+      {
+        "field": "GitHub Stars",
+        "status": "skills.sh-generated",
+        "youishValue": "Generated from GitHub when available.",
+        "source": "GitHub repository metadata."
+      },
+      {
+        "field": "First Seen",
+        "status": "skills.sh-generated",
+        "youishValue": "Generated when Skills.sh first indexes or receives install telemetry for the skill.",
+        "source": "Skills.sh index."
+      },
+      {
+        "field": "Security Audits",
+        "status": "skills.sh-generated",
+        "youishValue": "Gen Agent Trust Hub, Socket, and Snyk audit statuses when available.",
+        "source": "Skills.sh partner audits."
+      }
+    ],
     "sourceControlledFields": [
       "name",
       "description",
@@ -45,10 +121,14 @@
       "install command",
       "repository",
       "grouping",
+      "topics",
+      "agents",
       "summary",
+      "summary bullets",
       "SKILL.md preview"
     ],
     "skillsShGeneratedFields": [
+      "breadcrumb",
       "installs",
       "GitHub stars",
       "first seen",
