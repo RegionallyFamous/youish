@@ -3,7 +3,11 @@
 ## Unreleased
 
 - Add portable repo validation and GitHub Actions checks.
+- Add `scripts/audit.py` for model-free audits of arbitrary source/rewrite pairs.
+- Add `scripts/case_lab.py` to turn redacted rewrite failures into regression-case skeletons.
 - Add optional live model smoke testing with safer API URL and transcript handling.
+- Make live eval reporting track attempted, passed, not-run, and usage totals instead of counting stopped cases as passes.
+- Make live-eval saved transcripts hash-only by default, with explicit raw source/output opt-ins.
 - Add install drift checks for copied or symlinked skill installs.
 - Strengthen voice-profile guidance, emotional anti-flattening, and format preservation.
 - Harden deterministic fixture validation for protected facts, modality drift, causality drift, invented details, preambles, and no-dash constraints.

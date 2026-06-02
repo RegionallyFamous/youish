@@ -96,6 +96,8 @@ def main() -> int:
             fail("agents/openai.yaml default_prompt must mention $dittobot", errors)
 
     for rel in (
+        "scripts/audit.py",
+        "scripts/case_lab.py",
         "scripts/regression_100.py",
         "scripts/check_install.py",
         "scripts/install.py",

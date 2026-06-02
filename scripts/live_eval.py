@@ -32,6 +32,12 @@ PROMPT_MODES = ("any", "explicit_rewrite", "source_only")
 HARD_HTTP_ERRORS = {400, 401, 403, 404}
 
 
+@dataclasses.dataclass(frozen=True)
+class ApiResult:
+    text: str
+    usage: dict
+
+
 def redact_secrets(text: str) -> str:
     return re.sub(r"sk-[A-Za-z0-9_*.-]+", "sk-...REDACTED", text)
 
@@ -50,6 +56,19 @@ def output_text(response: dict) -> str:
             if content.get("type") in {"output_text", "text"} and "text" in content:
                 parts.append(content["text"])
     return "\n".join(parts).strip()
+
+
+def usage_value(usage: dict, key: str) -> int:
+    value = usage.get(key)
+    return value if isinstance(value, int) else 0
+
+
+def open_private_jsonl(path: str):
+    target = Path(path)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND
+    fd = os.open(target, flags, 0o600)
+    os.chmod(target, 0o600)
+    return os.fdopen(fd, "a", encoding="utf-8")
 
 
 def user_prompt(case: Case) -> str:
@@ -91,7 +110,7 @@ def call_responses_api(
     prompt: str,
     timeout: int,
     max_output_tokens: int,
-) -> str:
+) -> ApiResult:
     payload = {
         "model": model,
         "max_output_tokens": max_output_tokens,
@@ -115,10 +134,16 @@ def call_responses_api(
     text = output_text(body)
     if not text:
         raise RuntimeError(f"Response did not include output text: {body}")
-    return text
+    usage = body.get("usage")
+    return ApiResult(text=text, usage=usage if isinstance(usage, dict) else {})
 
 
-def selected_cases(case_ids: list[str], limit: int, prompt_mode: str) -> list[Case]:
+def selected_cases(
+    case_ids: list[str],
+    limit: int,
+    prompt_mode: str,
+    ensure_source_only: int = 0,
+) -> list[Case]:
     cases = make_cases()
     if case_ids:
         by_id = {case.id: case for case in cases}
@@ -134,17 +159,45 @@ def selected_cases(case_ids: list[str], limit: int, prompt_mode: str) -> list[Ca
 
     if case_ids:
         return cases
-    return representative_cases(cases, limit)
+    return representative_cases(cases, limit, ensure_source_only if prompt_mode == "any" else 0)
 
 
-def representative_cases(cases: list[Case], limit: int) -> list[Case]:
+def representative_cases(cases: list[Case], limit: int, ensure_source_only: int = 0) -> list[Case]:
     """Pick a spread across the grouped deterministic suite."""
     if limit <= 0:
         raise SystemExit("--limit must be greater than 0.")
     if limit >= len(cases):
         return cases
     step = len(cases) / limit
-    return [cases[int(index * step)] for index in range(limit)]
+    selected = [cases[int(index * step)] for index in range(limit)]
+    if ensure_source_only <= 0:
+        return selected
+
+    source_only = [case for case in cases if case.prompt_mode == "source_only"]
+    wanted = min(ensure_source_only, limit, len(source_only))
+    if wanted == 0:
+        return selected
+    present = {case.id for case in selected if case.prompt_mode == "source_only"}
+    additions = [case for case in source_only if case.id not in present][: max(0, wanted - len(present))]
+    if not additions:
+        return selected
+
+    selected_ids = {case.id for case in selected}
+    replaceable = [
+        index for index, case in enumerate(selected) if case.prompt_mode != "source_only"
+    ]
+    for case in additions:
+        if case.id in selected_ids:
+            continue
+        if replaceable:
+            index = replaceable.pop()
+            selected_ids.discard(selected[index].id)
+            selected[index] = case
+        else:
+            selected.append(case)
+        selected_ids.add(case.id)
+    order = {case.id: index for index, case in enumerate(cases)}
+    return sorted(selected[:limit], key=lambda case: order[case.id])
 
 
 def print_case_list(cases: list[Case]) -> None:
@@ -206,6 +259,12 @@ def main() -> int:
         help="Filter cases by prompt style.",
     )
     parser.add_argument(
+        "--ensure-source-only",
+        type=int,
+        default=1,
+        help="When sampling all prompt modes, include at least this many source-only cases.",
+    )
+    parser.add_argument(
         "--list-cases",
         action="store_true",
         help="List matching case ids without calling the API.",
@@ -225,6 +284,11 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=60)
     parser.add_argument("--max-output-tokens", type=int, default=500)
     parser.add_argument(
+        "--max-total-tokens",
+        type=int,
+        help="Stop before the next case once reported API usage reaches this total.",
+    )
+    parser.add_argument(
         "--fail-fast",
         action="store_true",
         help="Stop after the first API or validation failure.",
@@ -243,7 +307,17 @@ def main() -> int:
     parser.add_argument(
         "--no-save-source",
         action="store_true",
-        help="When saving JSONL, omit raw source text and store only hashes.",
+        help="Deprecated; raw source is omitted by default.",
+    )
+    parser.add_argument(
+        "--save-raw-source",
+        action="store_true",
+        help="When saving JSONL, include raw source text. Prefer redacted fixtures.",
+    )
+    parser.add_argument(
+        "--save-raw-output",
+        action="store_true",
+        help="When saving JSONL, include raw model output. It may contain source text.",
     )
     parser.add_argument(
         "--require-key",
@@ -256,13 +330,23 @@ def main() -> int:
     validate_save_path(args.save_jsonl)
     if args.max_failures is not None and args.max_failures <= 0:
         raise SystemExit("--max-failures must be greater than 0.")
+    if args.ensure_source_only < 0:
+        raise SystemExit("--ensure-source-only cannot be negative.")
+    if args.max_total_tokens is not None and args.max_total_tokens <= 0:
+        raise SystemExit("--max-total-tokens must be greater than 0.")
+    if args.no_save_source and args.save_raw_source:
+        raise SystemExit("--no-save-source conflicts with --save-raw-source.")
 
     if args.list_cases:
-        print_case_list(selected_cases(args.case, len(make_cases()), args.prompt_mode))
+        print_case_list(
+            selected_cases(args.case, len(make_cases()), args.prompt_mode, args.ensure_source_only)
+        )
         return 0
 
     if args.print_prompts:
-        print_prompts(selected_cases(args.case, args.limit, args.prompt_mode))
+        print_prompts(
+            selected_cases(args.case, args.limit, args.prompt_mode, args.ensure_source_only)
+        )
         return 0
 
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -273,18 +357,28 @@ def main() -> int:
     repo = Path(__file__).resolve().parents[1]
     skill_text = (repo / "SKILL.md").read_text(encoding="utf-8")
     skill_sha256 = sha256_text(skill_text)
-    cases = selected_cases(args.case, args.limit, args.prompt_mode)
+    cases = selected_cases(args.case, args.limit, args.prompt_mode, args.ensure_source_only)
 
     save_file = None
     if args.save_jsonl:
-        save_file = Path(args.save_jsonl).open("a", encoding="utf-8")
+        save_file = open_private_jsonl(args.save_jsonl)
 
     failures: list[tuple[str, list[str]]] = []
+    attempted = 0
+    passed = 0
+    total_input_tokens = 0
+    total_output_tokens = 0
+    total_tokens = 0
+    aborted = False
     try:
         for case in cases:
+            if args.max_total_tokens is not None and total_tokens >= args.max_total_tokens:
+                print("Stopping: token budget reached.")
+                break
             prompt = user_prompt(case)
+            attempted += 1
             try:
-                text = call_responses_api(
+                result = call_responses_api(
                     api_key=api_key,
                     api_url=args.api_url,
                     model=args.model,
@@ -293,6 +387,13 @@ def main() -> int:
                     timeout=args.timeout,
                     max_output_tokens=args.max_output_tokens,
                 )
+                text = result.text
+                input_tokens = usage_value(result.usage, "input_tokens")
+                output_tokens = usage_value(result.usage, "output_tokens")
+                case_total_tokens = usage_value(result.usage, "total_tokens")
+                total_input_tokens += input_tokens
+                total_output_tokens += output_tokens
+                total_tokens += case_total_tokens or input_tokens + output_tokens
             except urllib.error.HTTPError as exc:
                 detail = redact_secrets(exc.read().decode("utf-8", errors="replace"))
                 message = f"HTTP {exc.code}: {detail or exc.reason}"
@@ -300,7 +401,8 @@ def main() -> int:
                 print(f"{case.id}: FAIL | API error: {message}")
                 if exc.code in HARD_HTTP_ERRORS:
                     print("Stopping: hard API setup error.")
-                    return 1
+                    aborted = True
+                    break
                 if should_stop(failures, args.fail_fast, args.max_failures):
                     print("Stopping: failure limit reached.")
                     break
@@ -332,11 +434,15 @@ def main() -> int:
                     "skill_sha256": skill_sha256,
                     "source_sha256": sha256_text(case.source),
                     "prompt_sha256": sha256_text(prompt),
-                    "output": text,
+                    "output_sha256": sha256_text(text),
+                    "output_words": len(words(text)),
+                    "usage": result.usage,
                     "errors": errors,
                 }
-                if not args.no_save_source:
+                if args.save_raw_source:
                     record["source"] = case.source
+                if args.save_raw_output:
+                    record["output"] = text
                 save_file.write(
                     json.dumps(record, ensure_ascii=False)
                     + "\n"
@@ -346,12 +452,22 @@ def main() -> int:
                 if should_stop(failures, args.fail_fast, args.max_failures):
                     print("Stopping: failure limit reached.")
                     break
+            else:
+                passed += 1
     finally:
         if save_file:
             save_file.close()
 
-    print(f"\nLIVE TOTAL: {len(cases) - len(failures)}/{len(cases)} passed")
-    return 1 if failures else 0
+    not_run = len(cases) - attempted
+    print(f"\nLIVE TOTAL: {passed}/{attempted} attempted passed")
+    if not_run:
+        print(f"NOT RUN: {not_run}/{len(cases)} selected")
+    if total_tokens:
+        print(
+            "USAGE: "
+            f"input={total_input_tokens} output={total_output_tokens} total={total_tokens}"
+        )
+    return 1 if failures or aborted else 0
 
 
 if __name__ == "__main__":

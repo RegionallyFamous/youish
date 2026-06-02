@@ -12,6 +12,8 @@ from pathlib import Path
 FILES = (
     "SKILL.md",
     "agents/openai.yaml",
+    "scripts/audit.py",
+    "scripts/case_lab.py",
     "scripts/regression_100.py",
     "scripts/check_install.py",
     "scripts/install.py",

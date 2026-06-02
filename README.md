@@ -62,7 +62,9 @@ It:
 - avoids invented specifics, fake confidence, unsupported claims, and convenient made-up evidence;
 - keeps private ledgers for constraints, claims/facts, and voice markers;
 - uses fast editorial gates by default and expands into a 20-pass checklist for hard work;
-- includes a deterministic 100-case fixture harness plus an optional live model smoke test.
+- includes a deterministic 100-case fixture harness plus an optional live model smoke test;
+- ships a local rewrite audit tool for checking arbitrary source/rewrite pairs without calling a model;
+- includes a case lab for turning real bad rewrites into focused regression fixtures.
 
 Dittobot is not a ghostwriter. It is a voice-preserving editor. The goal is not "sounds professional." The goal is "sounds like you on a very good writing day."
 
@@ -147,7 +149,7 @@ rsync -a --delete ./ ~/.codex/skills/dittobot/
 
 Then invoke it as `$dittobot`.
 
-What gets installed: `SKILL.md`, `agents/openai.yaml`, and helper scripts for validation, installation, and optional live eval. Normal Dittobot use does not run or load the scripts.
+What gets installed: `SKILL.md`, `agents/openai.yaml`, and helper scripts for validation, installation, ad hoc rewrite audits, regression-case scaffolding, and optional live eval. Normal Dittobot use does not run or load the scripts.
 
 Check that your installed skill still matches the repo:
 
@@ -239,6 +241,8 @@ Run the deterministic fixture validator:
 ```bash
 python3 scripts/validate_skill.py
 python3 scripts/regression_100.py
+python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
+python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
 python3 -m py_compile scripts/*.py
 tmpdir="$(mktemp -d)"
 mkdir -p "$tmpdir/codex-skills"
@@ -253,11 +257,41 @@ Expected result:
 Skill repo validation passed.
 VALIDATOR SELF-TESTS: PASS
 TOTAL: 100/100 passed
+PASS | source_words=9 rewrite_words=9
+# Review before committing: keep fixtures redacted and focused.
 Installed skill matches repo (symlink): ...
 Installed symlink: ...
 ```
 
-This validates the fixtures, the validator itself, mutation checks against bad outputs, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, format preservation, diagnosis-only requests, and exact constraint handling.
+This validates the fixtures, the validator itself, mutation checks against bad outputs, the ad hoc audit tool, the case scaffold generator, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, format preservation, diagnosis-only requests, and exact constraint handling.
+
+## Dittobot Lab
+
+Dittobot is intentionally small in normal use, but the repo ships a little lab bench for people who want to prove the editor is behaving.
+
+Audit any source/rewrite pair without calling a model:
+
+```bash
+python3 scripts/audit.py \
+  --source "I think notice may be due in 10 days." \
+  --rewrite "Notice is due in 10 days." \
+  --preserve-uncertainty \
+  --protected "10 days"
+```
+
+Turn a real, redacted bad rewrite into a fixture skeleton:
+
+```bash
+python3 scripts/case_lab.py \
+  --case-id thought_dump_example_99 \
+  --source "messy but redacted source" \
+  --rewrite "desired passing rewrite" \
+  --voice "dry little joke" \
+  --protected "real date" \
+  --forbid "In today's landscape"
+```
+
+The workflow is simple: find a failure, audit it, convert it into a case, then teach Dittobot once instead of repeating the same warning forever.
 
 Run the optional live model smoke test when you have an API key. This is not a benchmark or a guarantee of voice fidelity; it is a sampled smoke test against one model/API configuration and the deterministic string/marker validators. By default, `--limit` samples across the suite instead of only taking the first cases, and source-only thought-dump fixtures exercise Dittobot's default inference path. A pass means no obvious fixture failures in that sample.
 
@@ -268,10 +302,10 @@ python3 scripts/live_eval.py --prompt-mode source_only --limit 5
 python3 scripts/live_eval.py --list-cases --prompt-mode source_only
 python3 scripts/live_eval.py --print-prompts --prompt-mode source_only --limit 2
 python3 scripts/live_eval.py --case legal_precision_01 --model "$OPENAI_MODEL"
-python3 scripts/live_eval.py --limit 20 --model gpt-5-mini --fail-fast --show-output-on-fail --save-jsonl live-eval-results.local.jsonl --no-save-source
+python3 scripts/live_eval.py --limit 20 --model gpt-5-mini --fail-fast --show-output-on-fail --max-total-tokens 50000 --save-jsonl live-eval-results.local.jsonl
 ```
 
-Use `--limit`, `--case`, `--prompt-mode source_only`, `--fail-fast`, or `--max-failures` to keep cost bounded and target the messy-default path. `--list-cases` and `--print-prompts` do not call the API. If `OPENAI_API_KEY` is not set, the live eval skips cleanly. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored; add `--no-save-source` to store hashes without raw source text.
+Use `--limit`, `--case`, `--prompt-mode source_only`, `--ensure-source-only`, `--fail-fast`, `--max-failures`, or `--max-total-tokens` to keep cost bounded and target the messy-default path. `--list-cases` and `--print-prompts` do not call the API. If `OPENAI_API_KEY` is not set, the live eval skips cleanly. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored. They store hashes by default; add `--save-raw-source` or `--save-raw-output` only when the text is safe to keep locally.
 
 Custom API URLs are blocked unless you pass `--allow-custom-api-url`; do that only for endpoints you trust with your bearer token and sample text.
 

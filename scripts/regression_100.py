@@ -247,6 +247,28 @@ def pad_to_exact_words(text: str, exact: int) -> str:
     return f"{text} {' '.join(words(filler)[:needed])}."
 
 
+def remove_phrase(text: str, phrase: str) -> str | None:
+    """Remove the first exact phrase match, ignoring case."""
+    match = re.search(re.escape(phrase), text, flags=re.IGNORECASE)
+    if not match:
+        return None
+    return (text[:match.start()] + text[match.end():]).strip()
+
+
+def replace_phrase_all(text: str, phrase: str, replacement: str) -> str:
+    """Replace every exact phrase match, ignoring case."""
+    return re.sub(re.escape(phrase), replacement, text, flags=re.IGNORECASE)
+
+
+def drop_uncertainty_words(text: str) -> str:
+    text = re.sub(r"\bprobably\s+", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bmay\s+", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bmight\s+", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bI think\s+", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
 def validate(case: Case) -> list[str]:
     errors: list[str] = []
     unquoted = strip_quoted(case.rewrite)
@@ -1504,6 +1526,20 @@ def run_negative_fixture_tests() -> list[str]:
 def run_mutation_tests() -> list[str]:
     """Mutate every good fixture in common bad-output ways and require failure."""
     failures: list[str] = []
+    uncertainty_markers = (
+        "maybe",
+        "may",
+        "might",
+        "probably",
+        "not definitive",
+        "not state that as definitive",
+        "I think",
+    )
+
+    def expect_error(case_id: str, label: str, errors: list[str], expected: str) -> None:
+        if not any(expected in error for error in errors):
+            failures.append(f"{case_id} / {label}: expected {expected}, got {errors}")
+
     mutations = [
         (
             "appended note",
@@ -1528,6 +1564,75 @@ def run_mutation_tests() -> list[str]:
                 failures.append(
                     f"{case.id} / {name}: expected {expected}, got {errors}"
                 )
+
+        if case.required_claims:
+            claim = case.required_claims[0]
+            rewrite = remove_phrase(case.rewrite, claim)
+            if rewrite is not None:
+                errors = validate(replace(case, rewrite=rewrite))
+                expect_error(case.id, "removed required claim", errors, "missing required claims")
+
+        if case.forbid_assertions:
+            rewrite = f"{case.rewrite} {case.forbid_assertions[0]}"
+            errors = validate(replace(case, rewrite=rewrite))
+            expect_error(
+                case.id,
+                "injected forbidden assertion",
+                errors,
+                "forbidden assertions appeared",
+            )
+
+        if case.protected:
+            protected = case.protected[0]
+            rewrite = remove_phrase(case.rewrite, protected)
+            if rewrite is not None:
+                errors = validate(replace(case, rewrite=rewrite))
+                expect_error(case.id, "removed protected fact", errors, "lost protected facts")
+
+        if case.preserve_voice:
+            voice_marker = case.preserve_voice[0]
+            rewrite = replace_phrase_all(case.rewrite, voice_marker, "[plain]")
+            if rewrite != case.rewrite:
+                errors = validate(replace(case, rewrite=rewrite))
+                expect_error(case.id, "removed voice marker", errors, "lost voice markers")
+
+        if case.preserve_uncertainty:
+            rewrite = drop_uncertainty_words(case.rewrite)
+            if rewrite != case.rewrite and not any(
+                contains_term(rewrite, marker) for marker in uncertainty_markers
+            ):
+                errors = validate(replace(case, rewrite=rewrite))
+                expect_error(case.id, "dropped uncertainty", errors, "lost uncertainty marker")
+
+        if any(contains_term(case.source, term) for term in ("maybe", "may", "might", "probably")):
+            rewrite = f"{case.rewrite} This definitely will happen."
+            errors = validate(replace(case, rewrite=rewrite))
+            expect_error(case.id, "hardened uncertainty", errors, "modality drift markers appeared")
+
+        rewrite = f"{case.rewrite} The root cause was database latency."
+        errors = validate(replace(case, rewrite=rewrite))
+        expect_error(case.id, "invented root cause", errors, "causality drift markers appeared")
+
+        if case.prompt_mode == "source_only":
+            errors = validate(replace(case, rewrite=case.source))
+            if not errors:
+                failures.append(f"{case.id} / raw source passthrough unexpectedly passed")
+            if case.forbid_wrappers:
+                errors = validate(replace(case, rewrite=f"**Rewrite**\n{case.rewrite}"))
+                expect_error(case.id, "added wrapper", errors, "unexpected rewrite wrapper")
+            if case.forbid_clarifying:
+                errors = validate(
+                    replace(case, rewrite=f"Can you clarify the audience?\n{case.rewrite}")
+                )
+                expect_error(
+                    case.id,
+                    "asked clarifying question",
+                    errors,
+                    "unexpected clarifying question",
+                )
+            if case.max_question_marks is not None:
+                errors = validate(replace(case, rewrite=f"{case.rewrite}?"))
+                expect_error(case.id, "added question", errors, "question mark count failed")
     return failures
 
 

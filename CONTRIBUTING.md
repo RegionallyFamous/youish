@@ -6,7 +6,7 @@ Dittobot improves when real writing failures become small, repeatable tests.
 
 - Put broad editing behavior in `SKILL.md` only when it should affect many tasks.
 - Put concrete failure cases in `scripts/regression_100.py`.
-- Put public adoption, install, and philosophy changes in `README.md`.
+- Put public adoption, install, lab-tooling, and philosophy changes in `README.md`.
 - Put validation, install, and live-model tooling in `scripts/`.
 
 If a change makes normal skill use more verbose without making Dittobot more reliable, it probably belongs in the harness instead of `SKILL.md`.
@@ -38,6 +38,15 @@ Good regression cases include:
 
 Prefer one sharp case over ten vague cases.
 
+Use the lab scripts when a failure is hard to reason about:
+
+```bash
+python3 scripts/audit.py --source-file source.txt --rewrite-file rewrite.txt --protected "real date" --voice "dry little joke"
+python3 scripts/case_lab.py --case-id new_case_01 --source-file source.txt --rewrite-file desired.txt --protected "real date" --voice "dry little joke"
+```
+
+`audit.py` tells you which guardrails catch the bad output. `case_lab.py` prints a `Case(...)` skeleton you can review, redact, and paste into the harness.
+
 ## Validation
 
 Before opening a pull request, run:
@@ -45,6 +54,8 @@ Before opening a pull request, run:
 ```bash
 python3 scripts/validate_skill.py
 python3 scripts/regression_100.py
+python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
+python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
 python3 -m py_compile scripts/*.py
 ```
 

@@ -23,6 +23,11 @@ jobs:
       - name: Run deterministic regression fixtures
         run: python3 scripts/regression_100.py
 
+      - name: Verify Dittobot lab tools
+        run: |
+          python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
+          python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted" | grep "sample_case_01"
+
       - name: Compile scripts
         run: python3 -m py_compile scripts/*.py
 
@@ -46,3 +51,5 @@ jobs:
           python3 scripts/live_eval.py --list-cases --prompt-mode source_only | grep thought_dump
           python3 scripts/live_eval.py --print-prompts --prompt-mode source_only --limit 1 | grep "ok the launch note"
           ! python3 scripts/live_eval.py --max-failures 0
+          ! python3 scripts/live_eval.py --max-total-tokens 0
+          ! python3 scripts/live_eval.py --save-jsonl live-eval-results.jsonl --print-prompts --limit 1
