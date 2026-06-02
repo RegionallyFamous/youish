@@ -4,6 +4,10 @@
 
 Nothing yet.
 
+## 0.2.4 - 2026-06-02
+
+- Normalize GitHub CLI skill frontmatter whitespace in copied install checks so pinned `gh skill install` packages validate from the source repo checker.
+
 ## 0.2.3 - 2026-06-02
 
 - Make the Codex plugin marketplace path installable by adding a `plugins/dittobot` package mirror and validating it.

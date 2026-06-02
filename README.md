@@ -189,19 +189,19 @@ That is the point. Drop in the stream of consciousness; get back the version tha
 Pinned GitHub CLI install:
 
 ```bash
-gh skill install RegionallyFamous/dittobot skills/dittobot --agent codex --scope user --pin v0.2.3
+gh skill install RegionallyFamous/dittobot skills/dittobot --agent codex --scope user --pin v0.2.4
 ```
 
 Terminal fallback:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/v0.2.3/install.sh | DITTOBOT_REF=v0.2.3 bash
+curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/v0.2.4/install.sh | DITTOBOT_REF=v0.2.4 bash
 ```
 
 Codex plugin marketplace source:
 
 ```bash
-codex plugin marketplace add RegionallyFamous/dittobot --ref v0.2.3
+codex plugin marketplace add RegionallyFamous/dittobot --ref v0.2.4
 codex plugin add dittobot@dittobot
 ```
 

@@ -34,7 +34,7 @@ def skill_parts(path: Path) -> tuple[dict[str, str], str]:
             continue
         key, value = line.split(":", 1)
         scalars[key.strip()] = value.strip()
-    return scalars, body
+    return scalars, body.lstrip()
 
 
 def files_match(repo_file: Path, installed_file: Path, rel: str) -> bool:
