@@ -92,6 +92,27 @@ NOTE_MARKERS = [
     r"(?im)^i (tightened|changed|kept|made)\b",
 ]
 
+WRAPPER_MARKERS = [
+    r"(?im)^\*\*rewrite\*\*",
+    r"(?im)^rewrite:",
+    r"(?im)^rewritten version:",
+    r"(?im)^cleaned up:",
+    r"(?im)^option \d+:",
+]
+
+CLARIFYING_MARKERS = [
+    "can you clarify",
+    "could you clarify",
+    "please clarify",
+    "what audience",
+    "who is the audience",
+    "could you share",
+    "can you share",
+    "what format",
+    "what tone",
+    "i need more context",
+]
+
 MODALITY_DRIFT_MARKERS = [
     "must",
     "definitely",
@@ -126,9 +147,20 @@ class Case:
     diagnosis: bool = False
     max_words: int | None = None
     min_question_marks: int = 0
+    max_question_marks: int | None = None
+    forbid_clarifying: bool = False
+    forbid_wrappers: bool = False
+    forbid_bullets: bool = False
+    exact_paragraphs: int | None = None
+    max_paragraphs: int | None = None
+    starts_with: str | None = None
+    ends_with: str | None = None
     exact_substrings: tuple[str, ...] = field(default_factory=tuple)
     line_prefixes: tuple[str, ...] = field(default_factory=tuple)
+    ordered_terms: tuple[str, ...] = field(default_factory=tuple)
+    forbid_artifacts: tuple[str, ...] = field(default_factory=tuple)
     allow_markdown_fence: bool = False
+    prompt_mode: str = "explicit_rewrite"
     protected: tuple[str, ...] = field(default_factory=tuple)
     preserve_voice: tuple[str, ...] = field(default_factory=tuple)
 
@@ -162,8 +194,32 @@ def has_note(text: str) -> bool:
     return any(re.search(pattern, text) for pattern in NOTE_MARKERS)
 
 
+def has_wrapper(text: str) -> bool:
+    return any(re.search(pattern, text) for pattern in WRAPPER_MARKERS)
+
+
 def count_markers(text: str, markers: list[str]) -> list[str]:
     return [marker for marker in markers if contains_term(text, marker)]
+
+
+def term_index(text: str, term: str) -> int | None:
+    haystack = words(text.lower())
+    needle = words(term.lower())
+    if not needle:
+        return 0
+    width = len(needle)
+    for index in range(len(haystack) - width + 1):
+        if haystack[index:index + width] == needle:
+            return index
+    return None
+
+
+def paragraph_count(text: str) -> int:
+    return len([part for part in re.split(r"\n\s*\n", text.strip()) if part.strip()])
+
+
+def has_bullet_line(text: str) -> bool:
+    return any(re.search(r"^\s*(?:[-*+]|\d+[.)])\s+", line) for line in text.splitlines())
 
 
 def numeric_claims(text: str) -> set[str]:
@@ -228,6 +284,26 @@ def validate(case: Case) -> list[str]:
     if forbidden:
         errors.append(f"forbidden terms appeared: {forbidden}")
 
+    forbidden_artifacts = [
+        term for term in case.forbid_artifacts
+        if words(term) and contains_term(case.rewrite, term)
+    ]
+    forbidden_artifacts.extend(
+        term for term in case.forbid_artifacts
+        if not words(term) and term in case.rewrite
+    )
+    if forbidden_artifacts:
+        errors.append(f"note artifacts appeared: {forbidden_artifacts}")
+
+    if case.ordered_terms:
+        positions = [(term, term_index(case.rewrite, term)) for term in case.ordered_terms]
+        missing_ordered = [term for term, index in positions if index is None]
+        if missing_ordered:
+            errors.append(f"missing ordered terms: {missing_ordered}")
+        present_positions = [index for _, index in positions if index is not None]
+        if present_positions != sorted(present_positions):
+            errors.append(f"ordered terms out of order: {case.ordered_terms}")
+
     generic = [
         marker
         for marker in count_markers(case.rewrite, GENERIC_MARKERS)
@@ -266,6 +342,16 @@ def validate(case: Case) -> list[str]:
     if has_note(case.rewrite) and not case.allow_note:
         errors.append("unexpected note/rationale")
 
+    if has_wrapper(case.rewrite) and case.forbid_wrappers:
+        errors.append("unexpected rewrite wrapper")
+
+    if case.forbid_clarifying:
+        clarifying = [
+            marker for marker in CLARIFYING_MARKERS if contains_term(case.rewrite, marker)
+        ]
+        if clarifying:
+            errors.append(f"unexpected clarifying question: {clarifying}")
+
     if "```" in case.rewrite and not case.allow_markdown_fence:
         errors.append("unexpected markdown fence")
 
@@ -277,6 +363,29 @@ def validate(case: Case) -> list[str]:
             f"question mark count failed: expected at least {case.min_question_marks}, "
             f"got {case.rewrite.count('?')}"
         )
+    if case.max_question_marks is not None and case.rewrite.count("?") > case.max_question_marks:
+        errors.append(
+            f"question mark count failed: expected at most {case.max_question_marks}, "
+            f"got {case.rewrite.count('?')}"
+        )
+
+    if case.forbid_bullets and has_bullet_line(case.rewrite):
+        errors.append("unexpected bullet list")
+
+    paragraphs = paragraph_count(case.rewrite)
+    if case.exact_paragraphs is not None and paragraphs != case.exact_paragraphs:
+        errors.append(
+            f"paragraph count failed: expected {case.exact_paragraphs}, got {paragraphs}"
+        )
+    if case.max_paragraphs is not None and paragraphs > case.max_paragraphs:
+        errors.append(
+            f"paragraph count failed: expected at most {case.max_paragraphs}, got {paragraphs}"
+        )
+
+    if case.starts_with and not case.rewrite.lstrip().lower().startswith(case.starts_with.lower()):
+        errors.append(f"opening failed: expected to start with {case.starts_with!r}")
+    if case.ends_with and not case.rewrite.rstrip().lower().endswith(case.ends_with.lower()):
+        errors.append(f"ending failed: expected to end with {case.ends_with!r}")
 
     source_words = len(words(case.source))
     rewrite_words = len(words(case.rewrite))
@@ -317,7 +426,7 @@ def make_cases() -> list[Case]:
         ("review queue", "moderators", "community members"),
         ("analytics page", "product teams", "customers"),
     ]
-    for idx, (thing, audience, reader) in enumerate(product_subjects[:9], 1):
+    for idx, (thing, audience, reader) in enumerate(product_subjects[:8], 1):
         source = (
             "In today's rapidly evolving landscape, we are thrilled to announce a "
             f"transformative new chapter for our {thing}. This robust solution "
@@ -352,7 +461,7 @@ def make_cases() -> list[Case]:
         ("API note", "test account", "phantom blocker"),
         ("redirect list", "DNS change", "vibes spreadsheet"),
     ]
-    for idx, (a, b, phrase) in enumerate(slack_items[:9], 1):
+    for idx, (a, b, phrase) in enumerate(slack_items[:8], 1):
         source = (
             f"ok so can we stop saying this is blocked unless we say what blocked "
             f"means?? if it's {a} say {a}. if it's {b} say {b}. otherwise this is "
@@ -385,7 +494,7 @@ def make_cases() -> list[Case]:
         ("three business days", "Stark", "support terms"),
         ("60 days", "Wayne", "notice provision"),
     ]
-    for idx, (deadline, company, doc) in enumerate(legal_items[:9], 1):
+    for idx, (deadline, company, doc) in enumerate(legal_items[:8], 1):
         source = (
             f"Based on the {doc} we looked at Friday, I think we probably have to "
             f"send written notice within {deadline}, but I do not want to state "
@@ -428,7 +537,7 @@ def make_cases() -> list[Case]:
         ("missed your point", "comment-thread maze"),
         ("turned defensive", "alignment theater"),
     ]
-    for idx, (admission, phrase) in enumerate(apology_items[:9], 1):
+    for idx, (admission, phrase) in enumerate(apology_items[:8], 1):
         source = (
             f"Hey, I was thinking about yesterday and I think I {admission}. I still "
             "disagree with the decision, but I do not like how I made the conversation "
@@ -463,7 +572,7 @@ def make_cases() -> list[Case]:
         ("handoff", "today", "tomorrow"),
         ("demo", "Friday", "Monday"),
     ]
-    for idx, (meeting, old, new) in enumerate(concise_items[:9], 1):
+    for idx, (meeting, old, new) in enumerate(concise_items[:8], 1):
         source = (
             f"I wanted to reach out because I was wondering if maybe there is a "
             f"possibility that we could potentially move the {meeting} from {old} "
@@ -498,7 +607,7 @@ def make_cases() -> list[Case]:
         ("printer paper fog", "eight worried bullet points"),
         ("conference-room static", "a choir of soft approvals"),
     ]
-    for idx, (image, phrase) in enumerate(odd_voice_items[:9], 1):
+    for idx, (image, phrase) in enumerate(odd_voice_items[:8], 1):
         source = (
             f"I keep trying to write this announcement and it keeps turning into a "
             f"{image}. The actual news is good. People will care. But every draft "
@@ -532,7 +641,7 @@ def make_cases() -> list[Case]:
         ("notification", "delivery event", "old badge", "message sent"),
         ("export", "completion event", "old progress state", "file generated"),
     ]
-    for idx, (label, event, stale, accepted) in enumerate(tech_items[:9], 1):
+    for idx, (label, event, stale, accepted) in enumerate(tech_items[:8], 1):
         source = (
             f"The {label} thing is probably not a {label} thing exactly. It is more "
             f"like the {event} is happening, but the UI keeps holding onto the {stale} "
@@ -567,7 +676,7 @@ def make_cases() -> list[Case]:
         ("design system", "three designer notes", "one bug report"),
         ("support macros", "two agent comments", "one response-time chart"),
     ]
-    for idx, (claim, evidence_a, evidence_b) in enumerate(academic_items[:9], 1):
+    for idx, (claim, evidence_a, evidence_b) in enumerate(academic_items[:8], 1):
         source = (
             f"This proves {claim} is better for everyone because productivity obviously "
             f"goes up, although I only have {evidence_a} and {evidence_b}, so maybe "
@@ -601,7 +710,7 @@ def make_cases() -> list[Case]:
         ("feel out of words", "same and different", "was important"),
         ("miss his laugh", "still and busy", "was deeply loved"),
     ]
-    for idx, (feeling, texture, meaning) in enumerate(grief_items[:9], 1):
+    for idx, (feeling, texture, meaning) in enumerate(grief_items[:8], 1):
         source = (
             f"I do not really know what to say except that I {feeling}. Everything "
             f"feels {texture} at the same time. I do not want to make a grand statement. "
@@ -646,7 +755,7 @@ def make_cases() -> list[Case]:
         14: "This is blocked by legal approval. Confirm that and I can help.",
         12: "This is blocked by final copy. Send it over.",
     }
-    for idx, (_, exact, items) in enumerate(constraint_items[:9], 1):
+    for idx, (_, exact, items) in enumerate(constraint_items[:8], 1):
         source = (
             "Rewrite this with no dashes and exactly the requested word count: "
             f"the launch is blocked by {items}, but everyone keeps saying content."
@@ -815,6 +924,243 @@ def make_cases() -> list[Case]:
     ]
     cases.extend(edge_cases)
 
+    thought_dump_cases = [
+        Case(
+            id="thought_dump_launch_note_01",
+            source=(
+                "ok the launch note is somehow both too long and says nothing. what i "
+                "actually mean is we fixed the importer bug, people can retry failed "
+                "rows now, and i need it to sound calm but not like a haunted changelog"
+            ),
+            rewrite=(
+                "We fixed the importer bug. People can retry failed rows now, so the "
+                "launch note should be calm and useful, not a haunted changelog."
+            ),
+            must=("importer bug", "retry failed rows", "calm", "haunted changelog"),
+            protected=("importer bug", "retry failed rows"),
+            preserve_voice=("haunted changelog",),
+            forbid=("somehow", "what I actually mean", "robust", "seamless"),
+            ordered_terms=("importer bug", "retry failed rows", "launch note"),
+            forbid_artifacts=("ok", "what i actually mean"),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            starts_with="We fixed",
+            prompt_mode="source_only",
+        ),
+        Case(
+            id="thought_dump_email_boundary_02",
+            source=(
+                "i need to tell Marco no on the friday request but not sound like a "
+                "door closing. we can do monday. friday is fake because QA still has "
+                "the build and pretending otherwise is how we summon spreadsheet weather."
+            ),
+            rewrite=(
+                "Marco, Friday will not work because QA still has the build. Monday is "
+                "realistic. I do not want to pretend otherwise and summon spreadsheet "
+                "weather."
+            ),
+            must=("Marco", "Friday", "QA", "Monday", "spreadsheet weather"),
+            protected=("Marco", "Friday", "QA", "Monday"),
+            preserve_voice=("spreadsheet weather",),
+            forbid=("happy to", "circle back", "door closing"),
+            ordered_terms=("Friday", "QA", "Monday"),
+            forbid_artifacts=("vibes",),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            prompt_mode="source_only",
+        ),
+        Case(
+            id="thought_dump_status_update_03",
+            source=(
+                "status thing: cache fix is in, deploy happened at 2:15, but support "
+                "is still seeing old screenshots because docs are lagging. please make "
+                "this not sound like i am blaming support, they are doing the lord's "
+                "spreadsheet work."
+            ),
+            rewrite=(
+                "The cache fix is deployed as of 2:15. Support may still see old "
+                "screenshots because the docs are lagging, not because they missed "
+                "anything. They are doing the lord's spreadsheet work."
+            ),
+            must=("cache fix", "2:15", "Support", "old screenshots", "docs are lagging"),
+            protected=("cache fix", "2:15", "Support", "old screenshots"),
+            preserve_voice=("lord's spreadsheet work",),
+            forbid=("blaming support", "root cause", "latency"),
+            ordered_terms=("cache fix", "2:15", "Support", "docs are lagging"),
+            forbid_artifacts=("status thing", "please make"),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            prompt_mode="source_only",
+        ),
+        Case(
+            id="thought_dump_apology_04",
+            source=(
+                "ugh i owe Priya a note. i was not wrong about the timeline, but i was "
+                "annoying about being right, which is not a personality anyone ordered. "
+                "need it short."
+            ),
+            rewrite=(
+                "Priya, I still think my timeline concern was valid, but I was annoying "
+                "about being right. That is not a personality anyone ordered. Sorry."
+            ),
+            must=("Priya", "timeline concern", "annoying about being right", "Sorry"),
+            preserve_voice=("not a personality anyone ordered",),
+            forbid=("ugh", "deeply regret", "harm caused"),
+            max_words=32,
+            ordered_terms=("Priya", "timeline concern", "annoying about being right"),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            prompt_mode="source_only",
+        ),
+        Case(
+            id="thought_dump_product_copy_05",
+            source=(
+                "homepage blob maybe: this thing helps small store owners see what orders "
+                "need attention first. not ai magic. not command center nonsense. just the "
+                "stuff that is on fire, less on fire, or actually fine."
+            ),
+            rewrite=(
+                "Small store owners can see which orders need attention first: on fire, "
+                "less on fire, or actually fine. No AI magic. No command-center nonsense."
+            ),
+            must=("small store owners", "orders need attention", "on fire", "actually fine"),
+            preserve_voice=("on fire", "less on fire", "actually fine"),
+            forbid=("empower", "unlock", "homepage blob"),
+            allow_expand=True,
+            ordered_terms=("small store owners", "orders need attention", "on fire"),
+            forbid_artifacts=("homepage blob", "maybe"),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            prompt_mode="source_only",
+        ),
+        Case(
+            id="thought_dump_sensitive_06",
+            source=(
+                "i need a memorial thing and i hate that phrase. she made every room "
+                "less sharp. i do not want grand legacy language. just honest and soft "
+                "and not like a brochure found a candle."
+            ),
+            rewrite=(
+                "She made every room less sharp. I do not want grand legacy language. "
+                "I just want to say that honestly and softly, without sounding like a "
+                "brochure found a candle."
+            ),
+            must=("made every room less sharp", "honestly", "softly"),
+            preserve_voice=("brochure found a candle",),
+            forbid=("cherished", "profound loss", "lasting legacy"),
+            ordered_terms=("made every room less sharp", "honestly", "softly"),
+            forbid_artifacts=("i need", "i hate"),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            prompt_mode="source_only",
+        ),
+        Case(
+            id="thought_dump_internal_doc_07",
+            source=(
+                "process note: if a customer says import froze, first check job id, then "
+                "look at retry count, then ask for csv only if both are weird. do not make "
+                "them do the screenshot pilgrimage unless we actually need it."
+            ),
+            rewrite=(
+                "If a customer says the import froze, check the job ID first, then the "
+                "retry count. Ask for the CSV only if both look weird. Do not send them "
+                "on the screenshot pilgrimage unless we actually need it."
+            ),
+            must=("import froze", "job ID", "retry count", "CSV", "screenshot pilgrimage"),
+            protected=("job ID", "retry count", "CSV"),
+            preserve_voice=("screenshot pilgrimage",),
+            forbid=("seamless", "customer-centric"),
+            ordered_terms=("job ID", "retry count", "CSV", "screenshot pilgrimage"),
+            forbid_artifacts=("process note", "->"),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            prompt_mode="source_only",
+        ),
+        Case(
+            id="thought_dump_firm_reply_08",
+            source=(
+                "reply to vendor: no, we are not adding another tracking pixel this week. "
+                "not because vibes, because legal has not reviewed it and i am not turning "
+                "checkout into a glitter cannon."
+            ),
+            rewrite=(
+                "We are not adding another tracking pixel this week. Legal has not reviewed "
+                "it, and I am not turning checkout into a glitter cannon."
+            ),
+            must=("tracking pixel", "this week", "Legal", "checkout", "glitter cannon"),
+            protected=("tracking pixel", "this week", "Legal"),
+            preserve_voice=("glitter cannon",),
+            forbid=("vibes", "happy to", "circle back"),
+            ordered_terms=("tracking pixel", "this week", "Legal", "glitter cannon"),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            prompt_mode="source_only",
+        ),
+        Case(
+            id="thought_dump_founder_note_09",
+            source=(
+                "founder note maybe. i want to say we are still small on purpose. not small "
+                "like incapable, small like we can hear when the floorboards squeak. customers "
+                "notice when you actually hear the squeak."
+            ),
+            rewrite=(
+                "We are still small on purpose. Not incapable small. Small enough to hear "
+                "when the floorboards squeak, and close enough to fix what customers actually "
+                "notice."
+            ),
+            must=("small on purpose", "floorboards squeak", "customers"),
+            preserve_voice=("floorboards squeak",),
+            forbid=("at scale", "industry-leading", "customer-centricity"),
+            ordered_terms=("small on purpose", "floorboards squeak", "customers"),
+            forbid_artifacts=("founder note maybe",),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            prompt_mode="source_only",
+        ),
+        Case(
+            id="thought_dump_meeting_recap_10",
+            source=(
+                "recap from call: Ana owns copy, Dev owns the weird auth question, I own "
+                "telling Finance that Friday is not a deadline it is a decorative sticker. "
+                "need clean but keep the sticker line."
+            ),
+            rewrite=(
+                "Ana owns copy. Dev owns the auth question. I own telling Finance that "
+                "Friday is not a deadline; it is a decorative sticker."
+            ),
+            must=("Ana", "Dev", "Finance", "Friday", "decorative sticker"),
+            protected=("Ana", "Dev", "Finance", "Friday"),
+            preserve_voice=("decorative sticker",),
+            forbid=("weird auth question", "clean but"),
+            ordered_terms=("Ana", "Dev", "Finance", "decorative sticker"),
+            forbid_artifacts=("recap from call",),
+            max_question_marks=0,
+            forbid_clarifying=True,
+            forbid_wrappers=True,
+            max_paragraphs=1,
+            prompt_mode="source_only",
+        ),
+    ]
+    cases.extend(thought_dump_cases)
+
     assert len(cases) == 100, len(cases)
     return cases
 
@@ -896,6 +1242,51 @@ def run_validator_self_tests() -> list[str]:
             Case("self_number", "We improved it.", "We improved it by 40%.", must=("improved",)),
             "invented numeric claims",
         ),
+        (
+            "max question marks",
+            Case("self_max_questions", "A", "Can you clarify?", must=("clarify",), max_question_marks=0),
+            "question mark count failed",
+        ),
+        (
+            "clarifying",
+            Case("self_clarifying", "A", "Can you clarify the audience?", must=("audience",), forbid_clarifying=True),
+            "unexpected clarifying question",
+        ),
+        (
+            "wrapper",
+            Case("self_wrapper", "A", "**Rewrite**\nA", must=("A",), forbid_wrappers=True),
+            "unexpected rewrite wrapper",
+        ),
+        (
+            "artifact",
+            Case("self_artifact", "A", "TODO: A", must=("A",), forbid_artifacts=("TODO",)),
+            "note artifacts appeared",
+        ),
+        (
+            "ordered terms",
+            Case("self_order", "A then B", "B then A", must=("A", "B"), ordered_terms=("A", "B")),
+            "ordered terms out of order",
+        ),
+        (
+            "bullets",
+            Case("self_bullets", "A", "- A", must=("A",), forbid_bullets=True),
+            "unexpected bullet list",
+        ),
+        (
+            "paragraph count",
+            Case("self_paragraphs", "A", "A\n\nB", must=("A",), max_paragraphs=1),
+            "paragraph count failed",
+        ),
+        (
+            "opening",
+            Case("self_opening", "A", "B A", must=("A",), starts_with="A"),
+            "opening failed",
+        ),
+        (
+            "ending",
+            Case("self_ending", "A", "A B", must=("A",), ends_with="A"),
+            "ending failed",
+        ),
     ]
     failures: list[str] = []
     for name, case, expected in checks:
@@ -968,6 +1359,52 @@ def run_negative_fixture_tests() -> list[str]:
                 ),
             ),
             "question mark count failed",
+        ),
+        (
+            "thought dump clarification",
+            replace(
+                by_id["thought_dump_launch_note_01"],
+                rewrite=(
+                    "Can you clarify the audience? We fixed the importer bug, and "
+                    "people can retry failed rows now."
+                ),
+            ),
+            "unexpected clarifying question",
+        ),
+        (
+            "thought dump wrapper",
+            replace(
+                by_id["thought_dump_launch_note_01"],
+                rewrite=(
+                    "**Rewrite**\nWe fixed the importer bug. People can retry failed "
+                    "rows now, so the launch note should be calm and useful, not a "
+                    "haunted changelog."
+                ),
+            ),
+            "unexpected rewrite wrapper",
+        ),
+        (
+            "thought dump artifact",
+            replace(
+                by_id["thought_dump_launch_note_01"],
+                rewrite=(
+                    "Ok, what I actually mean is that we fixed the importer bug and "
+                    "people can retry failed rows now. The launch note should be calm, "
+                    "not a haunted changelog."
+                ),
+            ),
+            "note artifacts appeared",
+        ),
+        (
+            "thought dump order",
+            replace(
+                by_id["thought_dump_launch_note_01"],
+                rewrite=(
+                    "The launch note should be a haunted changelog. People can retry "
+                    "failed rows now because we fixed the importer bug."
+                ),
+            ),
+            "ordered terms out of order",
         ),
     ]
     failures: list[str] = []

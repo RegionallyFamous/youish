@@ -7,6 +7,7 @@
 - Add install drift checks for copied or symlinked skill installs.
 - Strengthen voice-profile guidance, emotional anti-flattening, and format preservation.
 - Harden deterministic fixture validation for protected facts, modality drift, causality drift, invented details, preambles, and no-dash constraints.
+- Add thought-dump default fixtures, source-only live-eval prompts, clarifying-question guards, wrapper detection, ordered-term checks, artifact cleanup checks, and paragraph/bullet constraints.
 
 ## 0.1.0
 

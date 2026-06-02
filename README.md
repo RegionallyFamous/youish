@@ -1,6 +1,6 @@
 # Dittobot
 
-Voice-faithful rewrites for people who want AI to sound like them, not like a committee laminated a thesaurus.
+Paste messy notes, rough drafts, or thought dumps; get a voice-faithful rewrite that sounds like you, not like a committee laminated a thesaurus.
 
 [![Validate](https://github.com/RegionallyFamous/dittobot/actions/workflows/validate.yml/badge.svg)](https://github.com/RegionallyFamous/dittobot/actions/workflows/validate.yml)
 ![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)
@@ -26,6 +26,14 @@ ok the launch note is somehow both too long and says nothing. what i actually me
 
 Dittobot should preserve your voice, protect your facts, remove the fog, and hand back the finished version by default.
 
+It returns something like:
+
+```text
+We fixed the importer bug. People can retry failed rows now, so the launch note should be calm and useful, not a haunted changelog.
+```
+
+You do not need to explain the whole job. Paste the mess; Dittobot infers the edit.
+
 ## Why This Exists
 
 The answer is not "never use AI." The answer is "teach the tool your voice."
@@ -47,6 +55,7 @@ Dittobot is a Codex skill for rewriting, tightening, diagnosing, and punching up
 
 It:
 
+- turns raw notes, rants, fragments, and thought dumps into usable prose by default;
 - preserves voice, intent, facts, stance, rhythm, humor, and formality;
 - tightens prose without sanding off the human parts;
 - removes bland AI tells like generic openers, shiny abstractions, tidy triples, and dash dependency;
@@ -83,6 +92,8 @@ The real problem is not that AI can help with writing. The real problem is letti
 The sane move is to encode taste.
 
 Teach the system what to preserve. Teach it which claims it cannot change. Teach it when to be blunt, when to be warm, when to leave the weird phrase alone because the weird phrase is the whole point. Teach it that a better sentence is not always a smoother sentence. Teach it that "less AI-sounding" does not mean adding typos, fake casualness, or random little messes. It means restoring intent.
+
+Most of the time, teaching it means giving it your actual messy draft, not writing a perfect prompt.
 
 Writing with AI should not mean outsourcing your voice. It should mean giving your voice a better editor.
 
@@ -246,9 +257,9 @@ Installed skill matches repo (symlink): ...
 Installed symlink: ...
 ```
 
-This validates the fixtures, the validator itself, mutation checks against bad outputs, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, format preservation, diagnosis-only requests, and exact constraint handling.
+This validates the fixtures, the validator itself, mutation checks against bad outputs, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, format preservation, diagnosis-only requests, and exact constraint handling.
 
-Run the optional live model smoke test when you have an API key. This is not a benchmark or a guarantee of voice fidelity; it is a sampled smoke test against one model/API configuration and the deterministic string/marker validators. By default, `--limit` samples across the suite instead of only taking the first cases. A pass means no obvious fixture failures in that sample.
+Run the optional live model smoke test when you have an API key. This is not a benchmark or a guarantee of voice fidelity; it is a sampled smoke test against one model/API configuration and the deterministic string/marker validators. By default, `--limit` samples across the suite instead of only taking the first cases, and source-only thought-dump fixtures exercise Dittobot's default inference path. A pass means no obvious fixture failures in that sample.
 
 ```bash
 export OPENAI_API_KEY="sk-..."

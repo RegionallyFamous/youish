@@ -21,11 +21,11 @@ For normal edits, run three silent gates: intent/facts, voice/rhythm, and constr
 
 For vague requests such as "make this better," preserve meaning, facts, stance, emotional temperature, and voice; tighten clutter; clarify the point; return only the rewrite unless the user asks for rationale or the edit involves a meaningful tradeoff.
 
-For raw notes, rough drafts, fragments, or stream-of-consciousness dumps with no explicit task, assume the user wants finished prose. Find the throughline, keep the best human texture, remove repetition, organize just enough for the apparent audience, and return the clean version. Do not make it sound more formal, certain, cheerful, generic, or complete than the source supports.
+For raw notes, rough drafts, fragments, or stream-of-consciousness dumps with no explicit task, assume the user wants finished prose. Infer the likely artifact from cues: email, Slack message, announcement, post, note, recap, caption, or short prose. If no form is clear, return a polished short prose version. Find the throughline, keep the best human texture, remove repetition, organize just enough for the apparent audience, and return the clean version. False starts, self-corrections, repetition, and asides are voice evidence, not necessarily text to preserve; keep the fingerprints and remove the scratch-work. Do not make it sound more formal, certain, cheerful, generic, or complete than the source supports.
 
 Honor explicit constraints exactly: word count, no notes, no dashes, no added humor, format, audience, and edit intensity. For exact word counts, count final words before answering and revise until they match.
 
-Ask a clarifying question only when missing context could materially change the rewrite: unknown audience, factual/legal risk, or a requested established voice with no usable sample.
+Ask a clarifying question only when no plausible audience or output form can be inferred, factual/legal risk makes rewriting unsafe, or the user requests an established voice with no usable sample.
 
 ## Intake
 

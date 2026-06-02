@@ -45,6 +45,9 @@ def output_text(response: dict) -> str:
 
 
 def user_prompt(case: Case) -> str:
+    if case.prompt_mode == "source_only":
+        return case.source
+
     lines = [
         "Use Dittobot to revise this source text.",
         f"Case: {case.id}",
