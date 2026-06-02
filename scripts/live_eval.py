@@ -19,6 +19,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -70,6 +71,11 @@ def open_private_jsonl(path: str):
     fd = os.open(target, flags, 0o600)
     os.chmod(target, 0o600)
     return os.fdopen(fd, "a", encoding="utf-8")
+
+
+def write_record(save_file, record: dict[str, Any]) -> None:
+    if save_file:
+        save_file.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
 def user_prompt(case: Case) -> str:
@@ -221,6 +227,10 @@ def print_prompts(cases: list[Case]) -> None:
         print(user_prompt(case))
 
 
+def case_by_id() -> dict[str, Case]:
+    return {case.id: case for case in make_cases()}
+
+
 def validate_api_url(api_url: str, allow_custom: bool) -> None:
     if api_url == DEFAULT_API_URL:
         return
@@ -251,6 +261,158 @@ def truncated(text: str, limit: int = 600) -> str:
     if len(text) <= limit:
         return text
     return text[:limit].rstrip() + "..."
+
+
+def result_record(
+    *,
+    case: Case,
+    model: str,
+    skill_sha256: str,
+    prompt_sha256: str | None,
+    source_sha256: str,
+    output: str,
+    usage: dict,
+    errors: list[str],
+) -> dict[str, Any]:
+    return {
+        "case": case.id,
+        "family": case_family(case.id),
+        "prompt_mode": case.prompt_mode,
+        "model": model,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "skill_sha256": skill_sha256,
+        "source_sha256": source_sha256,
+        "prompt_sha256": prompt_sha256,
+        "output_sha256": sha256_text(output),
+        "output_words": len(words(output)),
+        "usage": usage,
+        "failure_codes": unique_failure_codes(errors),
+        "failure_buckets": unique_failure_buckets(errors),
+        "errors": errors,
+    }
+
+
+def api_error_record(
+    *,
+    case: Case,
+    model: str,
+    skill_sha256: str,
+    prompt_sha256: str,
+    source_sha256: str,
+    errors: list[str],
+    api_error_code: int | None = None,
+) -> dict[str, Any]:
+    record = {
+        "case": case.id,
+        "family": case_family(case.id),
+        "prompt_mode": case.prompt_mode,
+        "model": model,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "skill_sha256": skill_sha256,
+        "source_sha256": source_sha256,
+        "prompt_sha256": prompt_sha256,
+        "failure_codes": unique_failure_codes(errors),
+        "failure_buckets": unique_failure_buckets(errors),
+        "errors": errors,
+    }
+    if api_error_code is not None:
+        record["api_error_code"] = api_error_code
+    return record
+
+
+def replay_records(path: str, model: str, save_jsonl: str | None) -> int:
+    transcript = Path(path)
+    if not transcript.exists():
+        raise SystemExit(f"Replay transcript not found: {transcript}")
+    records = []
+    for line_number, line in enumerate(transcript.read_text(encoding="utf-8").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise SystemExit(f"{path}:{line_number}: invalid JSON: {exc}") from exc
+        if not isinstance(record, dict):
+            raise SystemExit(f"{path}:{line_number}: expected object record")
+        records.append(record)
+
+    by_id = case_by_id()
+    repo = Path(__file__).resolve().parents[1]
+    skill_sha256 = sha256_text((repo / "SKILL.md").read_text(encoding="utf-8"))
+    save_file = open_private_jsonl(save_jsonl) if save_jsonl else None
+    failures: list[tuple[str, list[str]]] = []
+    attempted = 0
+    passed = 0
+    try:
+        for index, record in enumerate(records, 1):
+            case_id = str(record.get("case", ""))
+            if case_id not in by_id:
+                raise SystemExit(f"{path}:{index}: unknown case id {case_id!r}")
+            output = record.get("output")
+            record_errors = record.get("errors")
+            if not isinstance(record_errors, list):
+                record_errors = []
+            if not isinstance(output, str) and record_errors:
+                case = by_id[case_id]
+                errors = [str(error) for error in record_errors]
+                attempted += 1
+                print(f"{case.id}: FAIL | replay record has no output")
+                for error in errors:
+                    print(f"  - {error}")
+                write_record(
+                    save_file,
+                    api_error_record(
+                        case=case,
+                        model=str(record.get("model") or model),
+                        skill_sha256=str(record.get("skill_sha256") or skill_sha256),
+                        prompt_sha256=record.get("prompt_sha256")
+                        if isinstance(record.get("prompt_sha256"), str)
+                        else "",
+                        source_sha256=str(record.get("source_sha256") or sha256_text(case.source)),
+                        errors=errors,
+                        api_error_code=record.get("api_error_code")
+                        if isinstance(record.get("api_error_code"), int)
+                        else None,
+                    ),
+                )
+                failures.append((case.id, errors))
+                continue
+            if not isinstance(output, str):
+                raise SystemExit(
+                    f"{path}:{index}: replay records must include raw string output"
+                )
+            case = by_id[case_id]
+            attempted += 1
+            errors = validate(dataclasses.replace(case, rewrite=output))
+            status = "PASS" if not errors else "FAIL"
+            print(f"{case.id}: {status} | replay words={len(words(output))}")
+            for error in errors:
+                print(f"  - {error}")
+            replay_record = result_record(
+                case=case,
+                model=str(record.get("model") or model),
+                skill_sha256=str(record.get("skill_sha256") or skill_sha256),
+                prompt_sha256=record.get("prompt_sha256")
+                if isinstance(record.get("prompt_sha256"), str)
+                else None,
+                source_sha256=str(record.get("source_sha256") or sha256_text(case.source)),
+                output=output,
+                usage=record.get("usage") if isinstance(record.get("usage"), dict) else {},
+                errors=errors,
+            )
+            if isinstance(record.get("timestamp"), str):
+                replay_record["replayed_from_timestamp"] = record["timestamp"]
+            write_record(save_file, replay_record)
+            if errors:
+                failures.append((case.id, errors))
+            else:
+                passed += 1
+    finally:
+        if save_file:
+            save_file.close()
+
+    print(f"\nREPLAY TOTAL: {passed}/{attempted} passed")
+    return 1 if failures else 0
 
 
 def main() -> int:
@@ -310,6 +472,10 @@ def main() -> int:
     )
     parser.add_argument("--save-jsonl", help="Optional local transcript path. Do not commit it.")
     parser.add_argument(
+        "--replay-jsonl",
+        help="Validate raw outputs from a saved .local.jsonl transcript without API calls.",
+    )
+    parser.add_argument(
         "--no-save-source",
         action="store_true",
         help="Deprecated; raw source is omitted by default.",
@@ -331,8 +497,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    validate_api_url(args.api_url, args.allow_custom_api_url)
     validate_save_path(args.save_jsonl)
+    validate_save_path(args.replay_jsonl)
     if args.max_failures is not None and args.max_failures <= 0:
         raise SystemExit("--max-failures must be greater than 0.")
     if args.ensure_source_only < 0:
@@ -341,6 +507,11 @@ def main() -> int:
         raise SystemExit("--max-total-tokens must be greater than 0.")
     if args.no_save_source and args.save_raw_source:
         raise SystemExit("--no-save-source conflicts with --save-raw-source.")
+    if args.replay_jsonl and (args.list_cases or args.print_prompts):
+        raise SystemExit("--replay-jsonl cannot be combined with --list-cases or --print-prompts.")
+
+    if args.replay_jsonl:
+        return replay_records(args.replay_jsonl, args.model, args.save_jsonl)
 
     if args.list_cases:
         print_case_list(
@@ -353,6 +524,8 @@ def main() -> int:
             selected_cases(args.case, args.limit, args.prompt_mode, args.ensure_source_only)
         )
         return 0
+
+    validate_api_url(args.api_url, args.allow_custom_api_url)
 
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
@@ -402,8 +575,21 @@ def main() -> int:
             except urllib.error.HTTPError as exc:
                 detail = redact_secrets(exc.read().decode("utf-8", errors="replace"))
                 message = f"HTTP {exc.code}: {detail or exc.reason}"
-                failures.append((case.id, [f"API error: {message}"]))
+                errors = [f"API error: {message}"]
+                failures.append((case.id, errors))
                 print(f"{case.id}: FAIL | API error: {message}")
+                write_record(
+                    save_file,
+                    api_error_record(
+                        case=case,
+                        model=args.model,
+                        skill_sha256=skill_sha256,
+                        prompt_sha256=sha256_text(prompt),
+                        source_sha256=sha256_text(case.source),
+                        errors=errors,
+                        api_error_code=exc.code,
+                    ),
+                )
                 if exc.code in HARD_HTTP_ERRORS:
                     print("Stopping: hard API setup error.")
                     aborted = True
@@ -413,8 +599,20 @@ def main() -> int:
                     break
                 continue
             except (urllib.error.URLError, RuntimeError) as exc:
-                failures.append((case.id, [f"API error: {exc}"]))
+                errors = [f"API error: {exc}"]
+                failures.append((case.id, errors))
                 print(f"{case.id}: FAIL | API error: {exc}")
+                write_record(
+                    save_file,
+                    api_error_record(
+                        case=case,
+                        model=args.model,
+                        skill_sha256=skill_sha256,
+                        prompt_sha256=sha256_text(prompt),
+                        source_sha256=sha256_text(case.source),
+                        errors=errors,
+                    ),
+                )
                 if should_stop(failures, args.fail_fast, args.max_failures):
                     print("Stopping: failure limit reached.")
                     break
@@ -431,30 +629,21 @@ def main() -> int:
                 for line in truncated(text).splitlines():
                     print(f"    {line}")
             if save_file:
-                record = {
-                    "case": case.id,
-                    "family": case_family(case.id),
-                    "prompt_mode": case.prompt_mode,
-                    "model": args.model,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "skill_sha256": skill_sha256,
-                    "source_sha256": sha256_text(case.source),
-                    "prompt_sha256": sha256_text(prompt),
-                    "output_sha256": sha256_text(text),
-                    "output_words": len(words(text)),
-                    "usage": result.usage,
-                    "failure_codes": unique_failure_codes(errors),
-                    "failure_buckets": unique_failure_buckets(errors),
-                    "errors": errors,
-                }
+                record = result_record(
+                    case=case,
+                    model=args.model,
+                    skill_sha256=skill_sha256,
+                    prompt_sha256=sha256_text(prompt),
+                    source_sha256=sha256_text(case.source),
+                    output=text,
+                    usage=result.usage,
+                    errors=errors,
+                )
                 if args.save_raw_source:
                     record["source"] = case.source
                 if args.save_raw_output:
                     record["output"] = text
-                save_file.write(
-                    json.dumps(record, ensure_ascii=False)
-                    + "\n"
-                )
+                write_record(save_file, record)
             if errors:
                 failures.append((case.id, errors))
                 if should_stop(failures, args.fail_fast, args.max_failures):

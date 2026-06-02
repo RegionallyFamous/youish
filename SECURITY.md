@@ -14,6 +14,8 @@ Use redacted examples when opening issues.
 
 `scripts/live_eval.py` sends selected fixture text to the configured API endpoint only when `OPENAI_API_KEY` is set. It refuses custom API URLs unless `--allow-custom-api-url` is passed, and saved transcripts must end in `.local.jsonl`. Transcript saves are hash-only by default; use `--save-raw-source` or `--save-raw-output` only for public-safe text.
 
+`--replay-jsonl` does not call the API, but it requires raw `output` records for deterministic replay. Raw outputs may contain private source text, so only save replayable transcripts locally.
+
 Keep `*.local.jsonl`, `*.local.md`, and `*.local.json` files local. They are debugging artifacts, not release artifacts.
 
 ## Reporting

@@ -38,6 +38,28 @@ jobs:
           python3 scripts/live_report.py "$transcript" | grep "legal_precision_01"
           python3 scripts/live_report.py "$transcript" --json | grep "lost_uncertainty"
           ! python3 scripts/live_report.py "$transcript" --fail-under 0.75
+          replay="$RUNNER_TEMP/replay.local.jsonl"
+          python3 - "$replay" <<'PY'
+          import json
+          import sys
+          sys.path.insert(0, "scripts")
+          from regression_100 import make_cases
+          cases = {case.id: case for case in make_cases()}
+          records = [
+              {"case": "thought_dump_launch_note_01", "model": "gpt-5.2", "output": cases["thought_dump_launch_note_01"].rewrite},
+              {"case": "legal_precision_01", "model": "gpt-5.2", "output": "Based on the contract, notice is due within 10 business days."},
+              {"case": "technical_fidelity_01", "model": "gpt-5.2", "errors": ["API error: HTTP 429: rate limit"], "api_error_code": 429},
+          ]
+          with open(sys.argv[1], "w", encoding="utf-8") as handle:
+              for record in records:
+                  handle.write(json.dumps(record) + "\n")
+          PY
+          replayed="$RUNNER_TEMP/replayed.local.jsonl"
+          ! env OPENAI_API_KEY="" OPENAI_API_URL="https://example.invalid/v1/responses" python3 scripts/live_eval.py --replay-jsonl "$replay" --save-jsonl "$replayed"
+          python3 scripts/live_report.py "$replayed" | grep "api_error"
+          missing_output="$RUNNER_TEMP/missing-output.local.jsonl"
+          printf '%s\n' '{"case":"thought_dump_launch_note_01","model":"gpt-5.2"}' > "$missing_output"
+          ! python3 scripts/live_eval.py --replay-jsonl "$missing_output"
 
       - name: Compile scripts
         run: python3 -m py_compile scripts/*.py

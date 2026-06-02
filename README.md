@@ -350,11 +350,13 @@ python3 scripts/live_eval.py --list-cases --prompt-mode source_only
 python3 scripts/live_eval.py --print-prompts --prompt-mode source_only --limit 2
 python3 scripts/live_eval.py --case legal_precision_01 --model "$OPENAI_MODEL"
 python3 scripts/live_eval.py --limit 20 --model gpt-5-mini --fail-fast --show-output-on-fail --max-total-tokens 50000 --save-jsonl live-eval-results.local.jsonl
+python3 scripts/live_eval.py --limit 5 --save-jsonl replayable.local.jsonl --save-raw-output
+python3 scripts/live_eval.py --replay-jsonl replayable.local.jsonl
 python3 scripts/live_report.py live-eval-results.local.jsonl --fail-under 0.95
 python3 scripts/live_report.py live-eval-results.local.jsonl --json
 ```
 
-Use `--limit`, `--case`, `--prompt-mode source_only`, `--ensure-source-only`, `--fail-fast`, `--max-failures`, or `--max-total-tokens` to keep cost bounded and target the messy-default path. `--list-cases` and `--print-prompts` do not call the API. If `OPENAI_API_KEY` is not set, the live eval skips cleanly. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored. They store hashes by default; add `--save-raw-source` or `--save-raw-output` only when the text is safe to keep locally. `live_report.py` summarizes pass rates, usage, failure codes, buckets, and the top failed cases.
+Use `--limit`, `--case`, `--prompt-mode source_only`, `--ensure-source-only`, `--fail-fast`, `--max-failures`, or `--max-total-tokens` to keep cost bounded and target the messy-default path. `--list-cases`, `--print-prompts`, and `--replay-jsonl` do not call the API. If `OPENAI_API_KEY` is not set, the live eval skips cleanly unless `--require-key` is passed. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored. They store hashes by default; add `--save-raw-source` or `--save-raw-output` only when the text is safe to keep locally. Replays require raw `output` records; API-error records without output are preserved as failures. `live_report.py` summarizes pass rates, usage, failure codes, buckets, and the top failed cases.
 
 Custom API URLs are blocked unless you pass `--allow-custom-api-url`; do that only for endpoints you trust with your bearer token and sample text.
 

@@ -9,6 +9,8 @@
 - Add `scripts/live_report.py` for summarizing local live-eval transcripts by model, prompt mode, family, error type, and usage.
 - Add stable failure codes and buckets across audit/live-eval reporting.
 - Add profile-contract self-tests for same-source/different-profile behavior, profile fact leakage, evidence phrase overuse, and boundary overrides.
+- Add offline `live_eval.py --replay-jsonl` validation for saved raw-output transcripts.
+- Save API-error transcript records when live eval fails before a model output.
 - Add reusable fact-fence and voice-profile-card references.
 - Add package-file manifest sharing between install drift checks and repo validation.
 - Add optional live model smoke testing with safer API URL and transcript handling.

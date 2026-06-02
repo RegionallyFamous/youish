@@ -31,6 +31,13 @@ python3 scripts/live_eval.py --limit 10 --save-jsonl live-eval-results.local.jso
 python3 scripts/live_report.py live-eval-results.local.jsonl
 ```
 
+For offline replay, save raw output only with public-safe fixture text:
+
+```bash
+python3 scripts/live_eval.py --limit 5 --save-jsonl replayable.local.jsonl --save-raw-output
+python3 scripts/live_eval.py --replay-jsonl replayable.local.jsonl
+```
+
 5. Commit, push, and wait for GitHub Actions to pass.
 6. Tag the validated commit, preferably with a signed tag when available:
 
