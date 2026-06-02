@@ -2,7 +2,14 @@
 
 ## Unreleased
 
-- Nothing yet.
+Nothing yet.
+
+## 0.2.1 - 2026-06-02
+
+- Add repo plugin marketplace metadata so Dittobot can be exposed as a Codex marketplace source.
+- Add one-command release asset building, exact release asset verification, scorecard checksums, and stricter plugin package validation.
+- Tighten README examples and skeptic-facing copy so the argument lands faster with less manifesto echo.
+- Add optional archive checksum verification to the terminal installer and make the default install ref release-pinned.
 
 ## 0.2.0 - 2026-06-02
 

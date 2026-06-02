@@ -4,24 +4,16 @@
 from __future__ import annotations
 
 import argparse
-import re
 import stat
 import zipfile
 from pathlib import Path
 
-from package_files import PACKAGE_FILES
+from package_files import PACKAGE_FILES, assert_mirror_fresh
+from plugin_manifest import DEFAULT_VERSION, require_semver
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL_ROOT = ROOT / "skills" / "dittobot"
-DEFAULT_VERSION = "0.2.0"
-SEMVER_RE = re.compile(
-    r"^(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)"
-    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
-    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
-)
 ZIP_MTIME = (2026, 1, 1, 0, 0, 0)
 
 
@@ -44,10 +36,10 @@ def main() -> int:
     parser.add_argument("--output", help="Explicit ZIP path. Overrides --output-dir.")
     args = parser.parse_args()
 
-    if SEMVER_RE.fullmatch(args.version) is None:
-        raise SystemExit(f"Version must be strict semver: {args.version}")
+    require_semver(args.version)
     if not SKILL_ROOT.exists():
         raise SystemExit("Missing skills/dittobot package mirror; run scripts/sync_skill_package.py.")
+    assert_mirror_fresh(ROOT)
 
     missing = [rel for rel in PACKAGE_FILES if not (SKILL_ROOT / rel).exists()]
     if missing:

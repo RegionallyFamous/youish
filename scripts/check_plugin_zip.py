@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import re
 import sys
 import zipfile
 from pathlib import Path
@@ -14,19 +13,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from package_files import PACKAGE_FILES
+from plugin_manifest import PLUGIN_NAME, SEMVER_RE
 
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_FILES = {".codex-plugin/plugin.json"} | {
     f"skills/dittobot/{rel}" for rel in PACKAGE_FILES
 }
-SEMVER_RE = re.compile(
-    r"^(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)"
-    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
-    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
-)
 
 
 def digest_bytes(data: bytes) -> str:
@@ -79,8 +72,8 @@ def main() -> int:
 
         if ".codex-plugin/plugin.json" in actual:
             manifest = json.loads(handle.read(".codex-plugin/plugin.json").decode("utf-8"))
-            if manifest.get("name") != "dittobot":
-                errors.append("plugin name must be dittobot")
+            if manifest.get("name") != PLUGIN_NAME:
+                errors.append(f"plugin name must be {PLUGIN_NAME}")
             version = manifest.get("version")
             if not isinstance(version, str) or SEMVER_RE.fullmatch(version) is None:
                 errors.append("plugin version must be strict semver")

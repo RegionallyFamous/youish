@@ -7,12 +7,24 @@ https://github.com/RegionallyFamous/dittobot/wiki/Release-Checklist
 Short version:
 
 1. Update `CHANGELOG.md`.
-2. Run deterministic proof: `python3 scripts/validate_skill.py`, `python3 scripts/regression_100.py`, and `python3 scripts/scorecard.py --format json`.
-3. Build and check the plugin package: `python3 scripts/build_plugin.py --version X.Y.Z`, then `python3 scripts/check_plugin_package.py dist/dittobot-plugin --version X.Y.Z`.
-4. Build release assets: `python3 scripts/build_skill_zip.py --version X.Y.Z`, `python3 scripts/build_plugin_zip.py dist/dittobot-plugin --version X.Y.Z`, and `python3 scripts/write_checksums.py dist/dittobot-skill-vX.Y.Z.zip dist/dittobot-plugin-vX.Y.Z.zip`.
-5. Generate the public scorecard with `scripts/scorecard.py --plugin-dir dist/dittobot-plugin --version X.Y.Z`.
-6. Push and wait for GitHub Actions.
-7. Confirm `gh skill publish --dry-run skills` is warning-free and the `Immutable v* release tags` ruleset is active.
-8. Tag the validated commit and create the GitHub release with `dittobot-skill-vX.Y.Z.zip`, `dittobot-plugin-vX.Y.Z.zip`, and `SHA256SUMS`.
+2. Run the one-command release builder: `python3 scripts/build_release_assets.py --version X.Y.Z`.
+3. Push and wait for GitHub Actions.
+4. Confirm `gh skill publish --dry-run skills` is warning-free and the `Immutable v* release tags` ruleset is active.
+5. Tag the validated commit and push the tag.
+6. Create the GitHub release from the already-pushed tag:
+
+```bash
+gh release create vX.Y.Z \
+  dist/release-vX.Y.Z/dittobot-skill-vX.Y.Z.zip \
+  dist/release-vX.Y.Z/dittobot-plugin-vX.Y.Z.zip \
+  dist/release-vX.Y.Z/dittobot-scorecard-vX.Y.Z.json \
+  dist/release-vX.Y.Z/SHA256SUMS \
+  --verify-tag \
+  --fail-on-no-commits \
+  --title "Dittobot vX.Y.Z" \
+  --generate-notes
+```
+
+Use `--verify-tag`; without it, `gh release create` can create a missing tag from the default branch, which is exactly the kind of release magic trick nobody asked for.
 
 Use live eval only as a bounded smoke test. Deterministic checks are release proof. Only call a live transcript score "passing" if it was run with an explicit threshold such as `--fail-under-score 0.95`.

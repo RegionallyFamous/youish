@@ -4,22 +4,14 @@
 from __future__ import annotations
 
 import argparse
-import re
 import stat
 import zipfile
 from pathlib import Path
 
 from package_files import PACKAGE_FILES
+from plugin_manifest import DEFAULT_VERSION, require_semver
 
 
-DEFAULT_VERSION = "0.2.0"
-SEMVER_RE = re.compile(
-    r"^(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)"
-    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
-    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
-)
 EXPECTED_FILES = {".codex-plugin/plugin.json"} | {
     f"skills/dittobot/{rel}" for rel in PACKAGE_FILES
 }
@@ -54,8 +46,7 @@ def main() -> int:
     parser.add_argument("--output", help="Explicit ZIP path. Overrides --output-dir.")
     args = parser.parse_args()
 
-    if SEMVER_RE.fullmatch(args.version) is None:
-        raise SystemExit(f"Version must be strict semver: {args.version}")
+    require_semver(args.version)
     plugin = Path(args.plugin_dir).expanduser().resolve()
     if not plugin.exists():
         raise SystemExit(f"Plugin directory not found: {plugin}")

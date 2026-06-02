@@ -6,22 +6,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from package_files import PACKAGE_FILES
+from plugin_manifest import PLUGIN_NAME, SEMVER_RE
 
 
-SEMVER_RE = re.compile(
-    r"^(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)"
-    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
-    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
-)
 EXPECTED_PLUGIN_FILES = {".codex-plugin/plugin.json"} | {
     f"skills/dittobot/{rel}" for rel in PACKAGE_FILES
 }
@@ -56,8 +49,8 @@ def main() -> int:
         errors.append("missing .codex-plugin/plugin.json")
     else:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if manifest.get("name") != "dittobot":
-            errors.append("plugin name must be dittobot")
+        if manifest.get("name") != PLUGIN_NAME:
+            errors.append(f"plugin name must be {PLUGIN_NAME}")
         version = manifest.get("version")
         if not isinstance(version, str) or SEMVER_RE.fullmatch(version) is None:
             errors.append("plugin version must be strict semver")
@@ -70,8 +63,19 @@ def main() -> int:
         interface = manifest.get("interface", {})
         if interface.get("displayName") != "Dittobot":
             errors.append("plugin interface.displayName must be Dittobot")
-        if "$dittobot" not in interface.get("defaultPrompt", ""):
-            errors.append("plugin defaultPrompt must mention $dittobot")
+        default_prompt = interface.get("defaultPrompt")
+        if not isinstance(default_prompt, list):
+            errors.append("plugin interface.defaultPrompt must be a list")
+        elif len(default_prompt) > 3:
+            errors.append("plugin interface.defaultPrompt must contain at most 3 prompts")
+        else:
+            for index, prompt in enumerate(default_prompt, start=1):
+                if not isinstance(prompt, str) or not prompt.strip():
+                    errors.append(f"plugin interface.defaultPrompt[{index}] must be a non-empty string")
+                elif len(prompt) > 128:
+                    errors.append(f"plugin interface.defaultPrompt[{index}] must be 128 characters or fewer")
+            if not any(isinstance(prompt, str) and "$dittobot" in prompt for prompt in default_prompt):
+                errors.append("plugin defaultPrompt must mention $dittobot")
         if interface.get("brandColor") != "#4F46E5":
             errors.append("plugin interface.brandColor must be #4F46E5")
         for field, expected in (

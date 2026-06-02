@@ -5,9 +5,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out repo
         uses: actions/checkout@v6
@@ -15,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.x"
+          python-version: "3.12"
 
       - name: Check spec package mirror
         run: |
@@ -32,7 +36,8 @@ jobs:
       - name: Check public README copy
         run: |
           python3 scripts/public_copy_check.py --description "Paste messy notes. Get sharp rewrites that sound like you on a good day."
-          grep "^## 0.2.0 - " CHANGELOG.md
+          grep "^## 0.2.1 - " CHANGELOG.md
+          python3 scripts/check_marketplace.py --version 0.2.1
 
       - name: Run deterministic regression fixtures
         run: python3 scripts/regression_100.py
@@ -108,22 +113,22 @@ jobs:
           printf 'import pathlib, sys\npathlib.Path(sys.argv[1], "validator-ran.txt").write_text("yes")\n' > "$ok_validator"
           fail_validator="$RUNNER_TEMP/fail-validator.py"
           printf 'raise SystemExit(7)\n' > "$fail_validator"
-          python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin-validator" --version 0.2.0 --validator "$ok_validator"
+          python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin-validator" --version 0.2.1 --validator "$ok_validator" --skip-package-check
           test -f "$RUNNER_TEMP/dittobot-plugin-validator/validator-ran.txt"
-          ! python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin-validator" --version 0.2.0
-          ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin-validator-fail" --version 0.2.0 --validator "$fail_validator"
+          ! python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin-validator" --version 0.2.1
+          ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin-validator-fail" --version 0.2.1 --validator "$fail_validator"
           ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --validator "$RUNNER_TEMP/missing-validator.py" --require-validator
-          python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --validator ""
-          python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0
+          python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.1 --validator ""
+          python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.1
           printf 'secret=nope\n' > "$RUNNER_TEMP/dittobot-plugin/skills/dittobot/.env"
-          ! python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0
-          ! python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --format json
-          ! python3 scripts/build_plugin_zip.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --output-dir "$RUNNER_TEMP"
+          ! python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.1
+          ! python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.1 --format json
+          ! python3 scripts/build_plugin_zip.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.1 --output-dir "$RUNNER_TEMP"
           rm "$RUNNER_TEMP/dittobot-plugin/skills/dittobot/.env"
           ! python3 scripts/build_skill_zip.py --version not-semver --output-dir "$RUNNER_TEMP"
-          python3 scripts/build_skill_zip.py --version 0.2.0 --output-dir "$RUNNER_TEMP"
-          python3 scripts/check_skill_zip.py "$RUNNER_TEMP/dittobot-skill-v0.2.0.zip"
-          python3 - "$RUNNER_TEMP/dittobot-skill-v0.2.0.zip" <<'PY'
+          python3 scripts/build_skill_zip.py --version 0.2.1 --output-dir "$RUNNER_TEMP"
+          python3 scripts/check_skill_zip.py "$RUNNER_TEMP/dittobot-skill-v0.2.1.zip"
+          python3 - "$RUNNER_TEMP/dittobot-skill-v0.2.1.zip" <<'PY'
           import sys
           import zipfile
           with zipfile.ZipFile(sys.argv[1]) as handle:
@@ -132,24 +137,25 @@ jobs:
           assert all(entry.startswith("dittobot/") for entry in entries)
           assert "dittobot/README.md" not in entries
           PY
-          python3 scripts/build_plugin_zip.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --output-dir "$RUNNER_TEMP"
-          python3 scripts/check_plugin_zip.py "$RUNNER_TEMP/dittobot-plugin-v0.2.0.zip" --version 0.2.0
+          python3 scripts/build_plugin_zip.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.1 --output-dir "$RUNNER_TEMP"
+          python3 scripts/check_plugin_zip.py "$RUNNER_TEMP/dittobot-plugin-v0.2.1.zip" --version 0.2.1
           unzip_dir="$RUNNER_TEMP/unzipped-plugin"
           mkdir -p "$unzip_dir"
-          python3 - "$RUNNER_TEMP/dittobot-plugin-v0.2.0.zip" "$unzip_dir" <<'PY'
+          python3 - "$RUNNER_TEMP/dittobot-plugin-v0.2.1.zip" "$unzip_dir" <<'PY'
           import sys
           import zipfile
           with zipfile.ZipFile(sys.argv[1]) as handle:
               handle.extractall(sys.argv[2])
           PY
-          python3 scripts/check_plugin_package.py "$unzip_dir" --version 0.2.0
-          python3 scripts/scorecard.py --plugin-dir "$unzip_dir" --version 0.2.0 --format json | grep '"status": "PASS"'
-          python3 scripts/write_checksums.py "$RUNNER_TEMP/dittobot-skill-v0.2.0.zip" "$RUNNER_TEMP/dittobot-plugin-v0.2.0.zip" --output "$RUNNER_TEMP/SHA256SUMS"
-          grep "dittobot-skill-v0.2.0.zip" "$RUNNER_TEMP/SHA256SUMS"
-          grep "dittobot-plugin-v0.2.0.zip" "$RUNNER_TEMP/SHA256SUMS"
-          python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 | grep "Dittobot Public Eval Scorecard"
+          python3 scripts/check_plugin_package.py "$unzip_dir" --version 0.2.1
+          python3 scripts/scorecard.py --plugin-dir "$unzip_dir" --version 0.2.1 --format json | grep '"status": "PASS"'
+          python3 scripts/write_checksums.py "$RUNNER_TEMP/dittobot-skill-v0.2.1.zip" "$RUNNER_TEMP/dittobot-plugin-v0.2.1.zip" --output "$RUNNER_TEMP/SHA256SUMS"
+          grep "dittobot-skill-v0.2.1.zip" "$RUNNER_TEMP/SHA256SUMS"
+          grep "dittobot-plugin-v0.2.1.zip" "$RUNNER_TEMP/SHA256SUMS"
+          ! python3 scripts/write_checksums.py "$RUNNER_TEMP/dittobot-skill-v0.2.1.zip" "$RUNNER_TEMP/dittobot-skill-v0.2.1.zip" --output "$RUNNER_TEMP/SHA256SUMS.duplicate"
+          python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.1 | grep "Dittobot Public Eval Scorecard"
           scorecard="$RUNNER_TEMP/scorecard.json"
-          python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --format json > "$scorecard"
+          python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.1 --format json > "$scorecard"
           python3 - "$scorecard" <<'PY'
           import json
           import sys
@@ -172,6 +178,8 @@ jobs:
           assert guardrails["source_only_default_inference"] == 10
           assert payload["plugin"]["status"] == "PASS"
           PY
+          python3 scripts/build_release_assets.py --version 0.2.1
+          python3 scripts/check_release_assets.py dist/release-v0.2.1 --version 0.2.1
 
       - name: Compile scripts
         run: python3 -m py_compile scripts/*.py
@@ -218,6 +226,15 @@ jobs:
           bash -n install.sh
           archive="$RUNNER_TEMP/dittobot.tar.gz"
           tar -czf "$archive" --exclude .git --exclude dist -C "$GITHUB_WORKSPACE/.." "$(basename "$GITHUB_WORKSPACE")"
+          archive_sha="$(python3 - "$archive" <<'PY'
+          import hashlib
+          import sys
+          print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())
+          PY
+          )"
+          DITTOBOT_ARCHIVE_URL="file://$archive" DITTOBOT_ARCHIVE_SHA256="$archive_sha" bash install.sh --install-dir "$RUNNER_TEMP/codex-skills-one-line-sha/dittobot"
+          python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-one-line-sha/dittobot"
+          ! DITTOBOT_ARCHIVE_URL="file://$archive" DITTOBOT_ARCHIVE_SHA256="0000000000000000000000000000000000000000000000000000000000000000" bash install.sh --install-dir "$RUNNER_TEMP/codex-skills-one-line-bad-sha/dittobot"
           DITTOBOT_ARCHIVE_URL="file://$archive" bash install.sh --install-dir "$RUNNER_TEMP/codex-skills-one-line/dittobot"
           python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-one-line/dittobot"
           decoy_source="$RUNNER_TEMP/decoy-source"

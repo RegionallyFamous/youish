@@ -42,30 +42,15 @@ Normal use is still simple: paste the mess and get the clean version.
 
 ## The Point
 
-The answer is not "never use AI." The answer is "teach the tool your voice."
+The answer is not "let AI write for you." The answer is "teach the tool your voice."
 
-This started because I watched the dumbest possible version of the argument show up in real life: people saw bad AI writing and jumped straight to "nobody should use AI for writing." The evidence was the usual stuff: too verbose, too generic, weird grammar, dash crimes, and that unmistakable smell of a draft trying to sound important while saying almost nothing.
+This started because I watched a real critique turn into a dumb rule. People saw verbose, generic, dash-happy AI writing and jumped straight to "nobody should use AI for writing." I get the rage. Bad AI writing is padded, fake-confident, weirdly bloodless, and somehow proud of saying almost nothing.
 
-I agreed with the diagnosis and hated the prescription. Bad AI writing is real: bloated, generic, fake-confident, and weirdly proud of saying almost nothing. I get why people hate it. I hate it too.
+I agreed with the diagnosis and hated the prescription.
 
-But banning AI because bad AI writing exists treats the worst workflow as the only workflow. That is a very confident way to lose the plot.
+Banning AI because bad AI writing exists treats the worst workflow as the only workflow. That is a very confident way to lose the plot.
 
 If your AI writes badly, the answer is not to throw away the tool. The answer is to teach it taste.
-
-The better move, the more hopeful move, and frankly the less exhausting move is to encode taste.
-
-## The AI Hater Case, Answered
-
-The AI-writing backlash has a point. People have seen enough soulless, padded, fake-confident slop to be annoyed. Good. Stay annoyed. Just aim the annoyance at the right thing.
-
-- **"AI writing has no soul."** Correct, if you ask it to invent one. Dittobot starts from your words. The stance, rhythm, humor, pressure, and weird little phrase are already there.
-- **"It is too verbose."** Bad AI writes like it is being paid by the clause. Dittobot cuts filler and returns the rewrite without a lecture unless you ask for one.
-- **"It all sounds the same."** Yes, if everyone accepts the first generic draft. Dittobot keeps dry jokes, justified edge, warmth, awkwardness, and useful rough edges.
-- **"It makes things up."** That is a real failure mode. Dittobot does not add numbers, customers, citations, examples, legal certainty, or convenient details that were not in the source.
-- **"It hides who wrote it."** Editing is not the same as outsourcing authorship. Dittobot keeps your claims, taste, and decisions in charge.
-- **"The dashes give it away."** Dashes are not the crime. Predictability is. Dittobot can obey no-dash rules, but the deeper fix is cadence and taste.
-
-The problem is not using AI. The problem is accepting the first bland answer, then blaming the whole category because nobody steered.
 
 ## Watch It Work
 
@@ -85,7 +70,7 @@ Dittobot notices:
 Rewrite:
 
 ```text
-We fixed the importer bug. People can retry failed rows now, so the launch note should be calm and useful, not a haunted changelog.
+We fixed the importer bug. Failed rows can now be retried, so the note can stay calm and useful instead of turning into a haunted changelog.
 ```
 
 ### Generic AI Paste
@@ -104,7 +89,7 @@ Dittobot notices:
 Rewrite:
 
 ```text
-We are updating the platform so teams can find the work, make a decision, and move on. The draft still needs specifics: what changed, who it helps, and what people can do now.
+This draft sounds confident but does not say enough to rewrite safely. Add what changed, who it helps, and what people can do now.
 ```
 
 ### Voice Worth Keeping
@@ -164,36 +149,22 @@ Rewrite:
 I am annoyed that people saw bad AI writing and decided the answer was banning the tool. But I am also genuinely excited, because we can teach it taste instead of pretending pencils are holy now.
 ```
 
+## The Skeptical Writer Case, Answered
+
+The AI-writing backlash has receipts. People have seen enough soulless, padded, fake-confident slop to be annoyed. Good. Stay annoyed. Just aim the annoyance at the workflow instead of pretending the tool is cursed.
+
+- **"It sounds like nobody."** Correct, if you ask it to invent a voice. Dittobot starts from your words. The stance, rhythm, humor, pressure, and weird little phrase are already there.
+- **"It gets bloated."** Bad AI writes like it is being paid by the clause. Dittobot cuts filler and returns the rewrite without a lecture unless you ask for one.
+- **"It flattens everyone into the same house style."** Yes, if everyone accepts the first generic draft. Dittobot keeps dry jokes, justified edge, warmth, awkwardness, and useful rough edges.
+- **"It invents confidence."** That is a real failure mode. Dittobot does not add numbers, customers, citations, examples, legal certainty, or convenient details that were not in the source.
+- **"It hides who wrote it."** Editing is not the same as outsourcing authorship. Dittobot keeps your claims, taste, and decisions in charge.
+- **"The tells give it away."** Dashes are not the crime. Predictability is. Dittobot can obey no-dash rules, but the deeper fix is cadence and taste.
+
+The problem is not using AI. The problem is accepting the first bland answer, then blaming the whole category because nobody steered.
+
 ## Use It
 
-Start inside Codex:
-
-```text
-Use $skill-installer to install Dittobot from GitHub repo RegionallyFamous/dittobot. Use path "." and install it as "dittobot".
-```
-
-Terminal fallback:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/main/install.sh | bash
-```
-
-Requires `curl`, `tar`, and Python 3. It installs a copy, backs up an existing Dittobot install, and does not use `sudo`.
-
-Other useful install paths:
-
-- Pinned GitHub CLI install: `gh skill install RegionallyFamous/dittobot dittobot@v0.2.0 --agent codex --scope user`
-- Uploadable skill ZIP: download `dittobot-skill-v0.2.0.zip` from [Releases](https://github.com/RegionallyFamous/dittobot/releases) and upload it anywhere local skill uploads are supported.
-
-If you want to edit Dittobot locally and have Codex see changes immediately:
-
-```bash
-git clone https://github.com/RegionallyFamous/dittobot.git
-cd dittobot
-python3 scripts/install.py
-```
-
-Then:
+After install, most prompts should be this boring:
 
 ```text
 Use $dittobot on this:
@@ -201,11 +172,37 @@ Use $dittobot on this:
 [paste the messy draft, notes, rant, email, announcement, post, caption, or half-formed thought]
 ```
 
-Most of the time, that is enough. Add instructions only for hard constraints like exact word count, no dashes, a specific audience, options, diagnosis-only mode, or a request to show what changed.
+That is the point. Drop in the stream of consciousness; get back the version that sounds like you after sleep, coffee, and one more pass.
+
+Pinned GitHub CLI install:
+
+```bash
+gh skill install RegionallyFamous/dittobot skills/dittobot --agent codex --scope user --pin v0.2.1
+```
+
+Terminal fallback:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/v0.2.1/install.sh | DITTOBOT_REF=v0.2.1 bash
+```
+
+Codex plugin marketplace source:
+
+```bash
+codex plugin marketplace add RegionallyFamous/dittobot --ref v0.2.1
+```
+
+Requires `curl`, `tar`, and Python 3 for the terminal fallback. It installs a copy, backs up an existing Dittobot install, verifies itself, and does not use `sudo`.
+
+Uploadable assets live in [Releases](https://github.com/RegionallyFamous/dittobot/releases): skill ZIP, plugin ZIP, public scorecard, and checksums.
+
+Most of the time, the default prompt is enough. Add instructions only for hard constraints like exact word count, no dashes, a specific audience, options, diagnosis-only mode, or a request to show what changed.
 
 ## Proof, Not Vibes
 
 Dittobot's quality story is not "trust me, it feels good." The repo checks voice preservation, protected facts, uncertainty, claim fidelity, exact word counts, no-dash constraints, and anti-generic behavior.
+
+This does not prove literary taste. It proves Dittobot keeps the constraints it claims to protect: facts, uncertainty, length, format, and anti-generic behavior.
 
 The scorecard is intentionally boring: complete-suite gates, stable failure codes, hashes, package checks, and public-safe reporting.
 
@@ -221,6 +218,7 @@ The manuals live in the wiki so the README can stay focused on the why and the e
 - [Voice Profiles](https://github.com/RegionallyFamous/dittobot/wiki/Voice-Profiles)
 - [Privacy And Fixtures](https://github.com/RegionallyFamous/dittobot/wiki/Privacy-And-Fixtures)
 - [Live Eval And Scorecards](https://github.com/RegionallyFamous/dittobot/wiki/Live-Eval-And-Scorecards)
+- [Distribution](https://github.com/RegionallyFamous/dittobot/wiki/Distribution)
 - [Release Checklist](https://github.com/RegionallyFamous/dittobot/wiki/Release-Checklist)
 
 ## Research Thread
@@ -234,7 +232,7 @@ The critique is worth taking seriously. Research on human-AI co-writing has foun
 
 ## About The Name
 
-The name is a playful nod to Ditto from Pokemon: transformation without losing the original shape. Also, "ditto" is a perfectly normal English word, so please do not sue me, Nintendo. Dittobot is unofficial and unaffiliated.
+The name nods to Ditto from Pokemon: transformation without losing the original shape. Also, "ditto" is a perfectly normal English word, so please do not sue me, Nintendo. Dittobot is unofficial and unaffiliated.
 
 ## License
 

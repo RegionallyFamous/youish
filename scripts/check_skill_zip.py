@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from package_files import PACKAGE_FILES
+from package_files import PACKAGE_FILES, assert_mirror_fresh
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +34,7 @@ def main() -> int:
 
     zip_path = Path(args.zip_path).expanduser()
     errors: list[str] = []
+    assert_mirror_fresh(ROOT)
 
     if not zip_path.exists():
         errors.append(f"missing ZIP: {zip_path}")

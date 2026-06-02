@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="${DITTOBOT_REPO:-RegionallyFamous/dittobot}"
-REF="${DITTOBOT_REF:-main}"
+REF="${DITTOBOT_REF:-v0.2.1}"
 
 if [ -n "${DITTOBOT_ARCHIVE_URL:-}" ]; then
   ARCHIVE_URL="$DITTOBOT_ARCHIVE_URL"
@@ -34,6 +34,20 @@ trap cleanup EXIT
 archive="$tmpdir/dittobot.tar.gz"
 printf 'Downloading Dittobot from %s\n' "$ARCHIVE_URL"
 curl -fsSL "$ARCHIVE_URL" -o "$archive"
+if [ -n "${DITTOBOT_ARCHIVE_SHA256:-}" ]; then
+  actual_sha="$(python3 - "$archive" <<'PY'
+import hashlib
+import sys
+
+with open(sys.argv[1], "rb") as handle:
+    print(hashlib.sha256(handle.read()).hexdigest())
+PY
+)"
+  if [ "$actual_sha" != "$DITTOBOT_ARCHIVE_SHA256" ]; then
+    printf 'Downloaded archive checksum mismatch.\nExpected: %s\nActual:   %s\n' "$DITTOBOT_ARCHIVE_SHA256" "$actual_sha" >&2
+    exit 1
+  fi
+fi
 tar -xzf "$archive" -C "$tmpdir"
 
 repo_dir=""

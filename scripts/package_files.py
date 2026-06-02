@@ -3,6 +3,9 @@
 
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
+
 
 PACKAGE_FILES = (
     "SKILL.md",
@@ -29,3 +32,28 @@ PACKAGE_FILES = (
     "scripts/voice_profile.py",
     "scripts/voice_probe.py",
 )
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def mirror_mismatches(root: Path) -> list[str]:
+    mirror = root / "skills" / "dittobot"
+    mismatches: list[str] = []
+    for rel in PACKAGE_FILES:
+        source = root / rel
+        packaged = mirror / rel
+        if not source.exists() or not packaged.exists() or digest(source) != digest(packaged):
+            mismatches.append(rel)
+    return mismatches
+
+
+def assert_mirror_fresh(root: Path) -> None:
+    mismatches = mirror_mismatches(root)
+    if mismatches:
+        raise SystemExit(
+            "skills/dittobot mirror is stale; run scripts/sync_skill_package.py "
+            "and commit the updated package mirror. Mismatched file(s): "
+            + ", ".join(mismatches)
+        )

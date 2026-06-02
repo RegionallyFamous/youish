@@ -22,6 +22,10 @@ def main() -> int:
     missing = [str(path) for path in assets if not path.is_file()]
     if missing:
         raise SystemExit("Cannot checksum missing asset(s): " + ", ".join(missing))
+    names = [path.name for path in assets]
+    duplicates = sorted({name for name in names if names.count(name) > 1})
+    if duplicates:
+        raise SystemExit("Cannot checksum assets with duplicate basename(s): " + ", ".join(duplicates))
 
     output = Path(args.output).expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)

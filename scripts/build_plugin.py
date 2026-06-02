@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import shutil
 import subprocess
 import sys
@@ -14,61 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from package_files import PACKAGE_FILES
-
-
-PLUGIN_NAME = "dittobot"
-DEFAULT_VERSION = "0.2.0"
-PLUGIN_DESCRIPTION = (
-    "Voice-faithful rewrites for people who want AI to sound like them."
-)
-SEMVER_RE = re.compile(
-    r"^(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)\."
-    r"(0|[1-9]\d*)"
-    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
-    r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
-)
-
-
-def manifest(version: str) -> dict:
-    return {
-        "name": PLUGIN_NAME,
-        "version": version,
-        "description": PLUGIN_DESCRIPTION,
-        "skills": "./skills/",
-        "author": {
-            "name": "Regionally Famous",
-            "url": "https://github.com/RegionallyFamous",
-        },
-        "homepage": "https://github.com/RegionallyFamous/dittobot",
-        "repository": "https://github.com/RegionallyFamous/dittobot",
-        "license": "GPL-2.0-or-later",
-        "keywords": ["writing", "editing", "voice", "rewrites", "skills"],
-        "interface": {
-            "displayName": "Dittobot",
-            "shortDescription": "Voice-faithful rewrites without factual drift.",
-            "longDescription": (
-                "Dittobot rewrites messy drafts, notes, emails, and posts while "
-                "preserving the user's voice, facts, stance, rhythm, humor, and "
-                "constraints."
-            ),
-            "developerName": "Regionally Famous",
-            "category": "Productivity",
-            "capabilities": [
-                "Voice-preserving rewrites",
-                "Messy-note cleanup",
-                "Fact and claim protection",
-                "Local regression tooling",
-            ],
-            "websiteURL": "https://github.com/RegionallyFamous/dittobot",
-            "privacyPolicyURL": "https://github.com/RegionallyFamous/dittobot/blob/main/SECURITY.md",
-            "termsOfServiceURL": "https://github.com/RegionallyFamous/dittobot/blob/main/LICENSE",
-            "brandColor": "#4F46E5",
-            "composerIcon": "skills/dittobot/assets/icon-small.svg",
-            "logo": "skills/dittobot/assets/icon-large.svg",
-            "defaultPrompt": "Use $dittobot on this. Paste the messy draft, notes, or thought dump below.",
-        },
-    }
+from plugin_manifest import DEFAULT_VERSION, PLUGIN_NAME, manifest, require_semver
 
 
 def copy_skill_package(repo: Path, plugin_root: Path) -> None:
@@ -89,6 +34,19 @@ def validate_plugin(plugin_root: Path, validator: str | None) -> int:
         return 0
     return subprocess.run(
         [sys.executable, str(validator_path), str(plugin_root)],
+        check=False,
+    ).returncode
+
+
+def check_plugin_package(plugin_root: Path, version: str) -> int:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(Path(__file__).resolve().parent / "check_plugin_package.py"),
+            str(plugin_root),
+            "--version",
+            version,
+        ],
         check=False,
     ).returncode
 
@@ -143,13 +101,17 @@ def main() -> int:
         action="store_true",
         help="Fail if the plugin validator path is empty or missing.",
     )
+    parser.add_argument(
+        "--skip-package-check",
+        action="store_true",
+        help="Skip Dittobot's local package checker. Intended only for checker failure tests.",
+    )
     args = parser.parse_args()
 
     repo = Path(__file__).resolve().parents[1]
     output = (repo / args.output_dir).resolve()
     dist_root = (repo / "dist").resolve()
-    if SEMVER_RE.fullmatch(args.version) is None:
-        raise SystemExit(f"Plugin version must be strict semver: {args.version}")
+    require_semver(args.version, "Plugin version")
     assert_safe_output(repo, output, dist_root)
     if args.require_validator:
         validator = Path(args.validator).expanduser() if args.validator else None
@@ -166,6 +128,10 @@ def main() -> int:
     code = validate_plugin(output, args.validator or None)
     if code != 0:
         return code
+    if not args.skip_package_check:
+        code = check_plugin_package(output, args.version)
+        if code != 0:
+            return code
     print(f"Built plugin package: {output}")
     return 0
 
