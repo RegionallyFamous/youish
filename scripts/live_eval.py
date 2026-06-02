@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from failure_taxonomy import unique_failure_buckets, unique_failure_codes
 from regression_100 import Case, make_cases, validate, words
 
 
@@ -442,6 +443,8 @@ def main() -> int:
                     "output_sha256": sha256_text(text),
                     "output_words": len(words(text)),
                     "usage": result.usage,
+                    "failure_codes": unique_failure_codes(errors),
+                    "failure_buckets": unique_failure_buckets(errors),
                     "errors": errors,
                 }
                 if args.save_raw_source:

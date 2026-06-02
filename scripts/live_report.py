@@ -11,6 +11,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from failure_taxonomy import failure_bucket, failure_code, unique_failure_buckets, unique_failure_codes
+
 
 def derived_family(case_id: str) -> str:
     return re.sub(r"_\d+$", "", case_id)
@@ -71,6 +73,9 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
     by_prompt_mode: dict[str, Counter[str]] = defaultdict(Counter)
     by_family: dict[str, Counter[str]] = defaultdict(Counter)
     failures = Counter()
+    failure_codes = Counter()
+    failure_buckets = Counter()
+    failed_cases: list[dict[str, Any]] = []
     skill_hashes = Counter()
     input_tokens = 0
     output_tokens = 0
@@ -92,8 +97,33 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         by_model[model][status] += 1
         by_prompt_mode[prompt_mode][status] += 1
         by_family[case_family][status] += 1
+        codes = (
+            record.get("failure_codes")
+            if isinstance(record.get("failure_codes"), list)
+            else unique_failure_codes([str(error) for error in errors])
+        )
+        buckets = (
+            record.get("failure_buckets")
+            if isinstance(record.get("failure_buckets"), list)
+            else unique_failure_buckets([str(error) for error in errors])
+        )
+        if errors:
+            failed_cases.append(
+                {
+                    "case": case_id,
+                    "family": case_family,
+                    "model": model,
+                    "prompt_mode": prompt_mode,
+                    "failure_codes": codes,
+                    "failure_buckets": buckets,
+                    "errors": [str(error) for error in errors],
+                }
+            )
         for error in errors:
-            failures[error_kind(str(error))] += 1
+            text = str(error)
+            failures[error_kind(text)] += 1
+            failure_codes[failure_code(text)] += 1
+            failure_buckets[failure_bucket(text)] += 1
 
         skill_sha256 = str(record.get("skill_sha256", ""))
         if skill_sha256:
@@ -123,6 +153,9 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         "by_prompt_mode": {key: dict(value) for key, value in sorted(by_prompt_mode.items())},
         "by_family": {key: dict(value) for key, value in sorted(by_family.items())},
         "failure_types": dict(failures.most_common()),
+        "failure_codes": dict(failure_codes.most_common()),
+        "failure_buckets": dict(failure_buckets.most_common()),
+        "failed_cases": failed_cases,
     }
 
 
@@ -138,7 +171,7 @@ def write_counter_section(title: str, rows: dict[str, dict[str, int]]) -> None:
         print(f"  {name}: {passed}/{total} passed ({pass_rate(passed, total):.1%})")
 
 
-def write_text_report(summary: dict[str, Any]) -> None:
+def write_text_report(summary: dict[str, Any], top_failures: int) -> None:
     total = int(summary["records"])
     passed = int(summary["passed"])
     failed = int(summary["failed"])
@@ -172,6 +205,30 @@ def write_text_report(summary: dict[str, Any]) -> None:
             print(f"  {name}: {count}")
     else:
         print("  none")
+    print()
+    print("failure codes:")
+    if summary["failure_codes"]:
+        for name, count in summary["failure_codes"].items():
+            print(f"  {name}: {count}")
+    else:
+        print("  none")
+    print()
+    print("failure buckets:")
+    if summary["failure_buckets"]:
+        for name, count in summary["failure_buckets"].items():
+            print(f"  {name}: {count}")
+    else:
+        print("  none")
+    print()
+    print("top failed cases:")
+    for record in summary["failed_cases"][:top_failures]:
+        codes = ", ".join(record["failure_codes"]) or "none"
+        print(
+            f"  {record['case']} [{record['model']} / {record['prompt_mode']}]: "
+            f"{codes}"
+        )
+    if not summary["failed_cases"]:
+        print("  none")
 
 
 def main() -> int:
@@ -180,6 +237,7 @@ def main() -> int:
     parser.add_argument("--model", help="Only include this model.")
     parser.add_argument("--prompt-mode", help="Only include this prompt mode.")
     parser.add_argument("--skill-sha256", help="Only include skill hashes with this prefix.")
+    parser.add_argument("--top-failures", type=int, default=10, help="Failed cases to show.")
     parser.add_argument(
         "--fail-under",
         type=float,
@@ -190,6 +248,8 @@ def main() -> int:
 
     if args.fail_under is not None and not 0 <= args.fail_under <= 1:
         raise SystemExit("--fail-under must be between 0 and 1.")
+    if args.top_failures < 0:
+        raise SystemExit("--top-failures cannot be negative.")
 
     records = filtered_records(
         read_records(args.transcripts),
@@ -204,7 +264,7 @@ def main() -> int:
     if args.json:
         print(json.dumps(summary, indent=2, ensure_ascii=False))
     else:
-        write_text_report(summary)
+        write_text_report(summary, args.top_failures)
 
     if args.fail_under is not None and summary["pass_rate"] < args.fail_under:
         print(

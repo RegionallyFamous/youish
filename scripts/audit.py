@@ -9,6 +9,7 @@ import json
 import sys
 from pathlib import Path
 
+from failure_taxonomy import unique_failure_buckets, unique_failure_codes
 from ledger import merge_ledgers, parse_fences, parse_ledger_files, split_terms, strip_fences
 from regression_100 import Case, numeric_claims, validate, words
 
@@ -136,6 +137,8 @@ def main() -> int:
         "source_words": len(words(source)),
         "rewrite_words": len(words(rewrite)),
         "protected": dataclasses.asdict(case)["protected"],
+        "failure_codes": unique_failure_codes(errors),
+        "failure_buckets": unique_failure_buckets(errors),
         "errors": errors,
     }
 
@@ -143,6 +146,10 @@ def main() -> int:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     elif errors:
         print(f"FAIL | source_words={result['source_words']} rewrite_words={result['rewrite_words']}")
+        if result["failure_codes"]:
+            print(f"  codes: {', '.join(result['failure_codes'])}")
+        if result["failure_buckets"]:
+            print(f"  buckets: {', '.join(result['failure_buckets'])}")
         for error in errors:
             print(f"  - {error}")
     else:

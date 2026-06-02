@@ -9,6 +9,7 @@ Dittobot releases should be boring, tagged, and validated.
 python3 scripts/validate_skill.py
 python3 scripts/regression_100.py
 python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
+python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "Notice is due in 10 days." --preserve-uncertainty --protected "10 days" --json || true
 python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
 python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing."
 python3 -m py_compile scripts/*.py

@@ -12,6 +12,7 @@ PACKAGE_FILES = (
     "scripts/audit.py",
     "scripts/case_lab.py",
     "scripts/check_install.py",
+    "scripts/failure_taxonomy.py",
     "scripts/install.py",
     "scripts/ledger.py",
     "scripts/live_eval.py",

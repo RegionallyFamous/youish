@@ -35,6 +35,8 @@ jobs:
             '{"case":"legal_precision_01","prompt_mode":"explicit_rewrite","model":"gpt-5.2","skill_sha256":"abc123def456789","usage":{"input_tokens":90,"output_tokens":30},"errors":["lost uncertainty marker"]}' \
             > "$transcript"
           python3 scripts/live_report.py "$transcript" | grep "LIVE EVAL REPORT"
+          python3 scripts/live_report.py "$transcript" | grep "legal_precision_01"
+          python3 scripts/live_report.py "$transcript" --json | grep "lost_uncertainty"
           ! python3 scripts/live_report.py "$transcript" --fail-under 0.75
 
       - name: Compile scripts

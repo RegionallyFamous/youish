@@ -265,7 +265,7 @@ Installed skill matches repo (symlink): ...
 Installed symlink: ...
 ```
 
-This validates the fixtures, the validator itself, mutation checks against bad outputs, the ad hoc audit tool, the case scaffold generator, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, format preservation, diagnosis-only requests, and exact constraint handling.
+This validates the 100 primary fixtures, the validator itself, profile-boundary contracts, mutation checks against bad outputs, the ad hoc audit tool, the case scaffold generator, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, reusable profile boundaries, format preservation, diagnosis-only requests, and exact constraint handling.
 
 ## Dittobot Lab
 
@@ -324,6 +324,8 @@ python3 scripts/audit.py \
   --preserve-uncertainty
 ```
 
+Failed audits include stable failure codes such as `lost_uncertainty`, `generic_ai_marker`, `lost_protected_fact`, and `unexpected_wrapper`, plus broader buckets such as `uncertainty_drift` or `fact_loss`.
+
 Turn a real, redacted bad rewrite into a fixture skeleton:
 
 ```bash
@@ -349,9 +351,10 @@ python3 scripts/live_eval.py --print-prompts --prompt-mode source_only --limit 2
 python3 scripts/live_eval.py --case legal_precision_01 --model "$OPENAI_MODEL"
 python3 scripts/live_eval.py --limit 20 --model gpt-5-mini --fail-fast --show-output-on-fail --max-total-tokens 50000 --save-jsonl live-eval-results.local.jsonl
 python3 scripts/live_report.py live-eval-results.local.jsonl --fail-under 0.95
+python3 scripts/live_report.py live-eval-results.local.jsonl --json
 ```
 
-Use `--limit`, `--case`, `--prompt-mode source_only`, `--ensure-source-only`, `--fail-fast`, `--max-failures`, or `--max-total-tokens` to keep cost bounded and target the messy-default path. `--list-cases` and `--print-prompts` do not call the API. If `OPENAI_API_KEY` is not set, the live eval skips cleanly. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored. They store hashes by default; add `--save-raw-source` or `--save-raw-output` only when the text is safe to keep locally.
+Use `--limit`, `--case`, `--prompt-mode source_only`, `--ensure-source-only`, `--fail-fast`, `--max-failures`, or `--max-total-tokens` to keep cost bounded and target the messy-default path. `--list-cases` and `--print-prompts` do not call the API. If `OPENAI_API_KEY` is not set, the live eval skips cleanly. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored. They store hashes by default; add `--save-raw-source` or `--save-raw-output` only when the text is safe to keep locally. `live_report.py` summarizes pass rates, usage, failure codes, buckets, and the top failed cases.
 
 Custom API URLs are blocked unless you pass `--allow-custom-api-url`; do that only for endpoints you trust with your bearer token and sample text.
 

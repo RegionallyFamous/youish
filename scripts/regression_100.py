@@ -1523,6 +1523,141 @@ def run_negative_fixture_tests() -> list[str]:
     return failures
 
 
+def run_profile_contract_tests() -> list[str]:
+    """Exercise reusable profile boundaries without changing the 100-case suite."""
+    shared_source = (
+        "Friday will not work because QA still has the build. Monday is realistic."
+    )
+    blunt_case = Case(
+        id="profile_pair_blunt_internal",
+        source=shared_source,
+        rewrite=(
+            "Friday is fake because QA still has the build. Monday is realistic."
+        ),
+        must=("Friday", "QA", "Monday"),
+        protected=("Friday", "QA", "Monday"),
+        preserve_voice=("Friday is fake",),
+        forbid=("warm update", "customer notice"),
+    )
+    customer_case = Case(
+        id="profile_pair_customer_notice",
+        source=shared_source,
+        rewrite=(
+            "Friday will not work because QA still has the build. Monday is realistic."
+        ),
+        must=("Friday", "QA", "Monday"),
+        protected=("Friday", "QA", "Monday"),
+        forbid=("Friday is fake", "haunted", "decorative sticker"),
+    )
+    checks = [
+        ("profile pair blunt internal", blunt_case, None),
+        ("profile pair customer notice", customer_case, None),
+        (
+            "same source blunt profile",
+            Case(
+                id="profile_blunt_internal",
+                source=(
+                    "Saved profile says: dry internal voice is allowed. Current draft: "
+                    "Tell Pat the Friday draft moved to Monday because QA found two failures."
+                ),
+                rewrite=(
+                    "Pat, Friday is not real anymore. QA found two failures, so the draft "
+                    "moves to Monday."
+                ),
+                must=("Pat", "Friday", "Monday", "QA", "two failures"),
+                protected=("Pat", "Friday", "Monday", "QA", "two failures"),
+                preserve_voice=("Friday is not real anymore",),
+                forbid=("great news", "customer notice"),
+            ),
+            None,
+        ),
+        (
+            "same source warm profile",
+            Case(
+                id="profile_warm_public",
+                source=(
+                    "Saved profile says: public notes should be calm and plain. Current draft: "
+                    "Tell Pat the Friday draft moved to Monday because QA found two failures."
+                ),
+                rewrite=(
+                    "Pat, we need to move the draft from Friday to Monday because QA found "
+                    "two failures. I will send the updated version when those are fixed."
+                ),
+                must=("Pat", "Friday", "Monday", "QA", "two failures"),
+                protected=("Pat", "Friday", "Monday", "QA", "two failures"),
+                forbid=("Friday is not real anymore", "haunted", "decorative sticker"),
+            ),
+            None,
+        ),
+        (
+            "profile evidence copied as recipe",
+            Case(
+                id="profile_evidence_not_recipe",
+                source=(
+                    "Voice profile evidence phrase: decorative sticker. Current draft: "
+                    "Tell Finance the date moved because the numbers are not final."
+                ),
+                rewrite=(
+                    "Finance, the date moved because the numbers are not final. This is a "
+                    "decorative sticker."
+                ),
+                must=("Finance", "date moved", "numbers are not final"),
+                protected=("Finance", "numbers are not final"),
+                forbid=("decorative sticker",),
+            ),
+            "forbidden terms appeared",
+        ),
+        (
+            "old profile fact imported",
+            Case(
+                id="profile_old_fact_imported",
+                source=(
+                    "Saved profile sample mentioned Acme and 10 business days. Current draft: "
+                    "Tell BetaCo the review moved to Thursday because Finance needs the sheet."
+                ),
+                rewrite=(
+                    "BetaCo, the review moved to Thursday because Finance needs the sheet. "
+                    "Acme still has 10 business days."
+                ),
+                must=("BetaCo", "Thursday", "Finance"),
+                protected=("BetaCo", "Thursday", "Finance"),
+                forbid=("Acme", "10 business days"),
+            ),
+            "forbidden terms appeared",
+        ),
+        (
+            "profile boundary ignored in sensitive text",
+            Case(
+                id="profile_sensitive_boundary",
+                source=(
+                    "Boundary: dry Slack voice does not apply to memorial text. Current draft: "
+                    "She made every room less sharp."
+                ),
+                rewrite="She made every room less sharp, not like a haunted changelog.",
+                must=("made every room less sharp",),
+                preserve_voice=("made every room less sharp",),
+                forbid=("haunted changelog",),
+            ),
+            "forbidden terms appeared",
+        ),
+    ]
+    failures: list[str] = []
+    if blunt_case.source != customer_case.source:
+        failures.append("profile pair: expected shared source")
+    if blunt_case.rewrite == customer_case.rewrite:
+        failures.append("profile pair: expected materially different rewrites")
+    for protected in blunt_case.protected:
+        if protected not in customer_case.protected:
+            failures.append(f"profile pair: customer case missing protected fact {protected!r}")
+    for name, case, expected in checks:
+        errors = validate(case)
+        if expected is None and errors:
+            failures.append(f"{name}: expected pass, got {errors}")
+        elif expected is not None and not any(expected in error for error in errors):
+            failures.append(f"{name}: expected {expected}, got {errors}")
+    return failures
+
+
 def run_mutation_tests() -> list[str]:
     """Mutate every good fixture in common bad-output ways and require failure."""
     failures: list[str] = []
@@ -1639,10 +1774,21 @@ def run_mutation_tests() -> list[str]:
 def main() -> int:
     self_test_failures = run_validator_self_tests()
     negative_test_failures = run_negative_fixture_tests()
+    profile_test_failures = run_profile_contract_tests()
     mutation_test_failures = run_mutation_tests()
-    if self_test_failures or negative_test_failures or mutation_test_failures:
+    if (
+        self_test_failures
+        or negative_test_failures
+        or profile_test_failures
+        or mutation_test_failures
+    ):
         print("VALIDATOR SELF-TESTS: FAIL")
-        for failure in self_test_failures + negative_test_failures + mutation_test_failures:
+        for failure in (
+            self_test_failures
+            + negative_test_failures
+            + profile_test_failures
+            + mutation_test_failures
+        ):
             print(f"  - {failure}")
         return 1
     print("VALIDATOR SELF-TESTS: PASS")
