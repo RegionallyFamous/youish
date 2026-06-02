@@ -36,18 +36,30 @@ printf 'Downloading Dittobot from %s\n' "$ARCHIVE_URL"
 curl -fsSL "$ARCHIVE_URL" -o "$archive"
 tar -xzf "$archive" -C "$tmpdir"
 
-installer=""
-while IFS= read -r candidate; do
-  installer="$candidate"
-  break
-done < <(find "$tmpdir" -maxdepth 3 -type f -path '*/scripts/install.py')
+repo_dir=""
+repo_count=0
+for candidate in "$tmpdir"/*; do
+  if [ -d "$candidate" ]; then
+    repo_dir="$candidate"
+    repo_count=$((repo_count + 1))
+  fi
+done
 
-if [ -z "$installer" ]; then
-  printf 'Could not find scripts/install.py in the downloaded archive.\n' >&2
+if [ "$repo_count" -ne 1 ]; then
+  printf 'Expected exactly one Dittobot folder in the downloaded archive; found %s.\n' "$repo_count" >&2
   exit 1
 fi
 
-repo_dir="$(cd "$(dirname "$installer")/.." && pwd)"
+if [ ! -f "$repo_dir/SKILL.md" ] || ! grep -q '^name: dittobot$' "$repo_dir/SKILL.md"; then
+  printf 'Downloaded archive does not look like the Dittobot skill repo.\n' >&2
+  exit 1
+fi
+
+if [ ! -f "$repo_dir/scripts/install.py" ]; then
+  printf 'Could not find scripts/install.py in the Dittobot archive.\n' >&2
+  exit 1
+fi
+
 printf 'Installing Dittobot into the Codex user skills folder...\n'
 python3 "$repo_dir/scripts/install.py" --copy "$@"
 printf 'Dittobot is installed. Start a new Codex session if $dittobot does not appear right away.\n'

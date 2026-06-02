@@ -17,6 +17,11 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Check spec package mirror
+        run: |
+          python3 scripts/sync_skill_package.py
+          git diff --exit-code -- skills/dittobot
+
       - name: Validate skill metadata
         run: python3 scripts/validate_skill.py
 
@@ -89,6 +94,10 @@ jobs:
           ! python3 scripts/build_plugin.py --version not-semver --validator ""
           mkdir -p "$RUNNER_TEMP/not-a-plugin"
           ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/not-a-plugin" --validator ""
+          mkdir -p dist/not-a-plugin
+          printf 'do not replace me\n' > dist/not-a-plugin/README.md
+          ! python3 scripts/build_plugin.py --output-dir dist/not-a-plugin --validator ""
+          rm -rf dist/not-a-plugin
           ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --validator "$RUNNER_TEMP/missing-validator.py" --require-validator
           python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --validator ""
           python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0
@@ -131,12 +140,32 @@ jobs:
         run: |
           python3 scripts/install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot"
           python3 scripts/install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot"
-          python3 scripts/install.py --copy --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
-          python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
-          printf 'stale file\n' > "$RUNNER_TEMP/codex-skills-installed/dittobot-copy/README.md"
-          ! python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
-          python3 scripts/install.py --copy --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
-          python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/dittobot-copy"
+          python3 scripts/install.py --copy --install-dir "$RUNNER_TEMP/codex-skills-copy/dittobot"
+          python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-copy/dittobot"
+          printf 'stale file\n' > "$RUNNER_TEMP/codex-skills-copy/dittobot/README.md"
+          ! python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-copy/dittobot"
+          python3 scripts/install.py --copy --install-dir "$RUNNER_TEMP/codex-skills-copy/dittobot"
+          python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-copy/dittobot"
+
+      - name: Check installer safety guards
+        run: |
+          ! python3 scripts/install.py --install-dir "$RUNNER_TEMP/codex-skills-installed/not-dittobot"
+          ! python3 scripts/install.py --install-dir "$GITHUB_WORKSPACE"
+          ! python3 scripts/install.py --install-dir "$GITHUB_WORKSPACE/dittobot"
+          mkdir -p "$GITHUB_WORKSPACE/nested"
+          ! python3 scripts/install.py --install-dir "$GITHUB_WORKSPACE/nested/dittobot"
+          mkdir -p "$RUNNER_TEMP/unsafe-target/dittobot"
+          printf 'not dittobot\n' > "$RUNNER_TEMP/unsafe-target/dittobot/README.md"
+          ! python3 scripts/install.py --install-dir "$RUNNER_TEMP/unsafe-target/dittobot"
+          python3 scripts/install.py --force --install-dir "$RUNNER_TEMP/unsafe-target/dittobot"
+          existing="$RUNNER_TEMP/preflight-existing/dittobot"
+          python3 scripts/install.py --copy --install-dir "$existing"
+          broken="$RUNNER_TEMP/broken-source"
+          mkdir -p "$broken/scripts"
+          cp scripts/install.py scripts/package_files.py scripts/check_install.py "$broken/scripts/"
+          cp SKILL.md "$broken/SKILL.md"
+          ! python3 "$broken/scripts/install.py" --install-dir "$existing"
+          python3 scripts/check_install.py --install-dir "$existing"
 
       - name: Check one-line installer
         run: |
@@ -145,6 +174,15 @@ jobs:
           tar -czf "$archive" --exclude .git --exclude dist -C "$GITHUB_WORKSPACE/.." "$(basename "$GITHUB_WORKSPACE")"
           DITTOBOT_ARCHIVE_URL="file://$archive" bash install.sh --install-dir "$RUNNER_TEMP/codex-skills-one-line/dittobot"
           python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-one-line/dittobot"
+          decoy_source="$RUNNER_TEMP/decoy-source"
+          mkdir -p "$decoy_source/dittobot-decoy"
+          tar -cf - --exclude .git --exclude dist -C "$GITHUB_WORKSPACE" . | tar -xf - -C "$decoy_source/dittobot-decoy"
+          mkdir -p "$decoy_source/dittobot-decoy/aaa/scripts"
+          printf '#!/usr/bin/env python3\nraise SystemExit(42)\n' > "$decoy_source/dittobot-decoy/aaa/scripts/install.py"
+          decoy_archive="$RUNNER_TEMP/dittobot-decoy.tar.gz"
+          tar -czf "$decoy_archive" -C "$decoy_source" dittobot-decoy
+          DITTOBOT_ARCHIVE_URL="file://$decoy_archive" bash install.sh --install-dir "$RUNNER_TEMP/codex-skills-decoy/dittobot"
+          python3 scripts/check_install.py --install-dir "$RUNNER_TEMP/codex-skills-decoy/dittobot"
 
       - name: Verify live eval skip path
         env:

@@ -8,9 +8,7 @@ Voice-faithful rewrites for people who want AI to sound like them, not like a co
 
 ![A risograph-style Dittobot workshop turning messy notes into clean prose](assets/readme-riso-banner.jpg)
 
-Paste messy notes. Get sharp prose that still sounds like you.
-
-That should not be controversial, but apparently here we are.
+Paste messy notes. Get sharp prose that still sounds like you. That should not be controversial. Apparently we needed a tool anyway.
 
 ## Start Here
 
@@ -30,21 +28,29 @@ Use $dittobot on this:
 
 That is the streamlined path: let Codex install the skill, then use the skill. No git ceremony. No tiny terminal archaeology expedition before you can fix a sentence.
 
+## What Dittobot Is
+
+Dittobot is a Codex skill that edits from your source instead of inventing a new voice. It finds the point, protects facts and uncertainty, keeps useful rough edges, and cuts bland AI tells.
+
+It is not a ghostwriter. It is a voice-preserving editor: your claims, your taste, your stance, your rhythm, just cleaned up enough that the reader does not have to excavate the point with a tiny shovel.
+
+It also checks the reader's job. The clean version should make the point, stakes, limits, and next action clear after one pass.
+
+For hard work, it expands into a silent 20-pass editorial loop. For proof, the repo ships a 100-case regression suite, model-free rewrite audits, privacy-first failure fixtures, compact voice profiles, fact fences, and public release scorecards.
+
+Normal use is still simple: paste the mess and get the clean version.
+
 ## The Point
 
 The answer is not "never use AI." The answer is "teach the tool your voice."
 
-This started because I watched the dumbest possible version of the argument show up in real life: people saw bad AI writing, decided they could write better than AI, and jumped straight to "nobody should use AI for writing." The evidence was the usual stuff: too verbose, too generic, weird grammar, dash crimes, and that unmistakable smell of a draft trying to sound important while saying almost nothing.
+This started because I watched the dumbest possible version of the argument show up in real life: people saw bad AI writing and jumped straight to "nobody should use AI for writing." The evidence was the usual stuff: too verbose, too generic, weird grammar, dash crimes, and that unmistakable smell of a draft trying to sound important while saying almost nothing.
 
-I agreed with the diagnosis and hated the prescription. Yes, bad AI writing is bad. Congratulations, we have discovered bad tools used badly. The interesting answer is not to ban the tool and hand everyone a purity badge. The interesting answer is to teach the tool taste, voice, restraint, and facts.
+I agreed with the diagnosis and hated the prescription. Bad AI writing is real: bloated, generic, fake-confident, and weirdly proud of saying almost nothing. I get why people hate it. I hate it too.
 
-Bad AI writing is real. It gets verbose. It invents confidence. It uses phrases nobody says unless a webinar has taken them hostage. I get why people hate it. I hate it too.
-
-But banning AI because bad AI writing exists is the wrong fight. That treats the worst workflow as the only workflow, which is a very confident way to lose the plot.
+But banning AI because bad AI writing exists treats the worst workflow as the only workflow. That is a very confident way to lose the plot.
 
 If your AI writes badly, the answer is not to throw away the tool. The answer is to teach it taste.
-
-Dittobot is not a ghostwriter. It is a voice-preserving editor. It starts with your draft, protects your facts, keeps the human texture, cuts the fog, and hands back the version that sounds like you on a good day.
 
 The better move, the more hopeful move, and frankly the less exhausting move is to encode taste.
 
@@ -59,7 +65,7 @@ The AI-writing backlash has a point. People have seen enough soulless, padded, f
 - **"It hides who wrote it."** Editing is not the same as outsourcing authorship. Dittobot keeps your claims, taste, and decisions in charge.
 - **"The dashes give it away."** Dashes are not the crime. Predictability is. Dittobot can obey no-dash rules, but the deeper fix is cadence and taste.
 
-The lazy move is not using AI. The lazy move is accepting output without taste, then blaming the whole category because nobody bothered to steer.
+The problem is not using AI. The problem is accepting the first bland answer, then blaming the whole category because nobody steered.
 
 ## Watch It Work
 
@@ -158,24 +164,9 @@ Rewrite:
 I am annoyed that people saw bad AI writing and decided the answer was banning the tool. But I am also genuinely excited, because we can teach it taste instead of pretending pencils are holy now.
 ```
 
-## What Dittobot Is
-
-Dittobot is a Codex skill for rewriting, tightening, diagnosing, and punching up prose while preserving the user's voice, intent, facts, stance, rhythm, humor, and formality.
-
-It does four things by default:
-
-- finds the point hiding inside the mess;
-- protects facts, claims, constraints, and uncertainty;
-- keeps the writer's rhythm, stance, jokes, and useful rough edges;
-- removes bland AI tells without adding fake human mess.
-
-For hard work, it expands into a silent 20-pass editorial loop. For proof, the repo ships a 100-case regression suite, model-free rewrite audits, privacy-first failure fixtures, compact voice profiles, fact fences, and public release scorecards.
-
-Normal use is still simple: paste the mess and get the clean version.
-
 ## Use It
 
-Most people should install from inside Codex:
+Start inside Codex:
 
 ```text
 Use $skill-installer to install Dittobot from GitHub repo RegionallyFamous/dittobot. Use path "." and install it as "dittobot".
@@ -185,6 +176,12 @@ Terminal fallback:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/main/install.sh | bash
+```
+
+GitHub CLI skill install:
+
+```bash
+gh skill install RegionallyFamous/dittobot dittobot --agent codex --scope user
 ```
 
 If you want a live symlink, clone the repo instead:
@@ -205,11 +202,9 @@ Use $dittobot on this:
 
 Most of the time, that is enough. Add instructions only for hard constraints like exact word count, no dashes, a specific audience, options, diagnosis-only mode, or a request to show what changed.
 
-Discovery directories are useful too. Dittobot is built as a normal `SKILL.md` repo, so it can be listed by skills.sh-style directories and agentskill.sh-style browsers. That helps people find it. `$skill-installer` is still the cleanest path from "this looks useful" to "I am using it."
-
 ## Proof, Not Vibes
 
-Dittobot's quality story is not "trust me, it feels good." The repo checks voice preservation, protected facts, uncertainty, claim fidelity, source-only thought-dump handling, exact word counts, no-dash constraints, and anti-generic behavior.
+Dittobot's quality story is not "trust me, it feels good." The repo checks voice preservation, protected facts, uncertainty, claim fidelity, exact word counts, no-dash constraints, and anti-generic behavior.
 
 The scorecard is intentionally boring: complete-suite gates, stable failure codes, hashes, package checks, and public-safe reporting.
 
@@ -230,8 +225,6 @@ The manuals live in the wiki so the README can stay focused on the why and the e
 ## Research Thread
 
 The critique is worth taking seriously. Research on human-AI co-writing has found that writers care about preserving authentic voice, and other work has found AI suggestions can flatten writing toward dominant styles. Dittobot is a practical answer to that risk: keep the speed, reject the flattening.
-
-This README also follows plain-language guidance: lead with the point, write for the audience, use short sections, prefer active voice, and let examples do real work.
 
 - ["It was 80% me, 20% AI": Seeking Authenticity in Co-Writing with Large Language Models](https://arxiv.org/abs/2411.13032)
 - [AI Suggestions Homogenize Writing Toward Western Styles and Diminish Cultural Nuances](https://arxiv.org/abs/2409.11360)

@@ -119,10 +119,10 @@ def check_required_content(markdown: str, errors: list[str]) -> None:
 def check_heading_order(markdown: str, errors: list[str]) -> None:
     headings = [
         "# Dittobot",
+        "## What Dittobot Is",
         "## The Point",
         "## The AI Hater Case, Answered",
         "## Watch It Work",
-        "## What Dittobot Is",
         "## Use It",
         "## Proof, Not Vibes",
     ]

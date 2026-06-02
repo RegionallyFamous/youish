@@ -111,7 +111,7 @@ def assert_safe_output(repo: Path, output: Path, dist_root: Path) -> None:
         repo in output.parents and output != dist_root and dist_root not in output.parents
     ):
         raise SystemExit("Refusing unsafe output directory inside the repo.")
-    if output.exists() and dist_root not in output.parents and not is_dittobot_plugin_dir(output):
+    if output.exists() and not is_dittobot_plugin_dir(output):
         raise SystemExit(
             "Refusing to replace an existing directory that is not a Dittobot plugin package."
         )
