@@ -31,6 +31,12 @@ jobs:
           { python3 scripts/rewrite_report.py --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days." --rewrite "Notice is due in 10 days." --preserve-uncertainty || true; } | grep "lost_uncertainty"
           python3 scripts/rewrite_report.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --protected "10 days" --preserve-uncertainty --json | grep '"status": "PASS"'
           python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing." | grep "Voice Probe"
+          profile="$RUNNER_TEMP/profile.local.json"
+          python3 scripts/voice_profile.py compile --sample "This draft is not bad. It just walks into the room and apologizes for existing. I want the useful bit without the meeting oatmeal." --profile-id ci-profile --out "$profile"
+          python3 scripts/voice_profile.py validate "$profile" | grep "Status: PASS"
+          python3 scripts/voice_profile.py render "$profile" --format prompt-md | grep "Use this as editing taste only"
+          python3 scripts/redact_case.py --case-id redacted_ci_01 --source "Nick at nick@example.com has sk-abc123456789012345678 and a weird launch note." --rewrite "Nick shipped it." --expected "Person A still needs the weird launch note fixed." --replace "Nick=Person A" --must "launch note" --json | grep '"status": "OK"'
+          python3 scripts/failure_fixture.py --case-id fixture_ci_01 --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days. Contact nick@example.com with sk-abc123456789012345678." --failed-rewrite "Notice is due in 10 days." --desired-rewrite "I think notice may be due in 10 days, haunted changelog and all." --preserve-uncertainty --allow-inline-private --json | grep '"status": "READY"'
           transcript="$RUNNER_TEMP/live.local.jsonl"
           printf '%s\n' \
             '{"case":"thought_dump_launch_note_01","prompt_mode":"source_only","model":"gpt-5.2","skill_sha256":"abc123def456789","usage":{"input_tokens":100,"output_tokens":20,"total_tokens":120},"errors":[]}' \

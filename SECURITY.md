@@ -10,6 +10,18 @@ Dittobot is a local Codex skill, but writing samples are personal. Treat drafts,
 
 Use redacted examples when opening issues.
 
+Prefer file-based inputs for private drafts when using local lab tools:
+
+```bash
+python3 scripts/failure_fixture.py \
+  --case-id redacted_example_01 \
+  --source-file source.local.md \
+  --failed-rewrite-file failed.local.md \
+  --desired-rewrite-file desired.local.md
+```
+
+Inline `--source`, `--failed-rewrite`, `--rewrite`, and `--desired-rewrite` values can land in shell history. Use `*.local.md` / `*.local.json` files for private material, and only paste tool-redacted output into public issues.
+
 ## Live Eval
 
 `scripts/live_eval.py` sends selected fixture text to the configured API endpoint only when `OPENAI_API_KEY` is set. It refuses custom API URLs unless `--allow-custom-api-url` is passed, and saved transcripts must end in `.local.jsonl`. Transcript saves are hash-only by default; use `--save-raw-source` or `--save-raw-output` only for public-safe text.

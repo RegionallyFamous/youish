@@ -10,7 +10,14 @@ from pathlib import Path
 from typing import Any
 
 
-LEDGER_KEYS = ("protected", "voice", "forbid", "required_claims", "forbid_assertions")
+LEDGER_KEYS = (
+    "protected",
+    "voice",
+    "forbid",
+    "required_claims",
+    "forbid_assertions",
+    "boundary",
+)
 FENCE_TO_KEY = {
     "keep": "protected",
     "protected": "protected",
@@ -21,6 +28,7 @@ FENCE_TO_KEY = {
     "avoid": "forbid",
     "forbid": "forbid",
     "forbid_assertion": "forbid_assertions",
+    "boundary": "boundary",
 }
 FENCE_PATTERN = re.compile(r"\[\[\s*([A-Za-z_ -]+)\s*:\s*(.*?)\s*\]\]", re.DOTALL)
 
@@ -84,6 +92,8 @@ def parse_json_ledger(path: Path) -> dict[str, list[str]]:
         "claims": "required_claims",
         "required_claims": "required_claims",
         "forbid_assertions": "forbid_assertions",
+        "boundary": "boundary",
+        "when_not_to_apply": "boundary",
     }
     for raw_key, value in raw.items():
         key = aliases.get(str(raw_key))

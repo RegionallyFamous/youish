@@ -131,6 +131,6 @@ Normal use should not load scripts. For regression testing only, run:
 python3 scripts/regression_100.py
 ```
 
-For ad hoc rewrite audits or regression-case scaffolds, use `scripts/audit.py` and `scripts/case_lab.py` without loading their code into normal writing tasks.
+For ad hoc rewrite audits, profile contracts, or privacy-safe fixture scaffolds, use `scripts/audit.py`, `scripts/voice_profile.py`, `scripts/redact_case.py`, `scripts/failure_fixture.py`, and `scripts/case_lab.py` without loading their code into normal writing tasks.
 
 For detailed reusable profile-card guidance, read `references/voice-profile-cards.md` only when the user asks for profile work. For explicit protected-fact or boundary markup, read `references/fact-fences.md` only when the user uses fences or asks for that workflow.

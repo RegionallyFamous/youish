@@ -65,8 +65,9 @@ It:
 - includes a deterministic 100-case fixture harness plus an optional live model smoke test;
 - ships a local rewrite audit tool for checking arbitrary source/rewrite pairs without calling a model;
 - ships a rewrite provenance report so users can see what was preserved, lost, or riskily added;
+- ships privacy-first failure fixture tooling for redacting bad rewrites before they become public tests;
 - includes a case lab for turning real bad rewrites into focused regression fixtures;
-- supports compact reusable voice profile cards, fact fences, and local voice probes.
+- supports compact reusable voice profile contracts, fact fences, and local voice probes.
 
 Dittobot is not a ghostwriter. It is a voice-preserving editor. The goal is not "sounds professional." The goal is "sounds like you on a very good writing day."
 
@@ -255,6 +256,11 @@ python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewr
 python3 scripts/rewrite_report.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --protected "10 days" --preserve-uncertainty
 python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
 python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing."
+profile="$(mktemp)"
+python3 scripts/voice_profile.py compile --sample "This draft is not bad. It just walks into the room and apologizes for existing. I want the useful bit without the meeting oatmeal." --out "$profile"
+python3 scripts/voice_profile.py validate "$profile"
+python3 scripts/redact_case.py --case-id redacted_case_01 --source "Person A has nick@example.com and sk-abc123456789012345678." --rewrite "Person A shipped it." --expected "Person A still needs the note fixed." --json
+python3 scripts/failure_fixture.py --case-id fixture_case_01 --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days." --failed-rewrite "Notice is due in 10 days." --desired-rewrite "I think notice may be due in 10 days, haunted changelog and all." --preserve-uncertainty --allow-inline-private --json
 python3 scripts/build_plugin.py --version 0.2.0 --validator ""
 python3 scripts/check_plugin_package.py dist/dittobot-plugin --version 0.2.0
 python3 -m py_compile scripts/*.py
@@ -278,6 +284,7 @@ PASS | source_words=9 rewrite_words=9
 # Rewrite Report
 # Review before committing: keep fixtures redacted and focused.
 # Voice Probe
+Status: PASS
 Plugin package check passed: ...
 Installed skill matches repo (symlink): ...
 Installed symlink: ...
@@ -285,7 +292,7 @@ Installed copy: ...
 Installed skill matches repo (copy): ...
 ```
 
-This validates the 100 primary fixtures, the validator itself, profile-boundary contracts, mutation checks against bad outputs, the ad hoc audit tool, the rewrite provenance report, the case scaffold generator, the plugin package, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, reusable profile boundaries, format preservation, diagnosis-only requests, and exact constraint handling.
+This validates the 100 primary fixtures, the validator itself, profile-boundary contracts, mutation checks against bad outputs, the ad hoc audit tool, the rewrite provenance report, privacy-safe fixture scaffolding, the voice profile contract compiler, the plugin package, and the installer. It covers corporate slop, blunt Slack, legal precision, apologies, concision, odd voice, technical notes, unsupported claims, sensitive writing, messy thought dumps, reusable profile boundaries, format preservation, diagnosis-only requests, and exact constraint handling.
 
 ## Dittobot Lab
 
@@ -299,31 +306,17 @@ python3 scripts/voice_probe.py samples/*.local.md
 
 Use those signals to build a compact profile card:
 
-```md
-## Use
-- Plain words, dry contrast, and short useful openings.
+```bash
+python3 scripts/voice_profile.py compile samples/*.local.md \
+  --profile-id my-default \
+  --out voice-profile.local.json \
+  --card-out voice-profile.local.md
 
-## Avoid
-- Corporate fog, tidy triples, forced cheer, and "professional" filler.
-
-## Rhythm/Diction
-- Mostly short sentences with the occasional sideways image.
-
-## Protected quirks
-- Keep the weird little joke when it carries the point.
-
-## Evidence phrases
-- "haunted changelog"
-- "walks into the room and apologizes for existing"
-
-## When not to apply
-- Legal, medical, financial, crisis, or customer-facing precision work.
-
-## Editing rules
-- Tighten hard, but do not sand off the speaker.
+python3 scripts/voice_profile.py validate voice-profile.local.json --strict
+python3 scripts/voice_profile.py render voice-profile.local.json --format prompt-md
 ```
 
-Profiles transfer taste, not old facts. Current draft facts, current audience, and explicit constraints win.
+Profiles transfer taste, not old facts. The JSON contract caps card size, evidence phrases, and boundaries so a profile stays portable instead of becoming a memory dump. Current draft facts, current audience, and explicit constraints win.
 
 Use fact fences when a draft has material that must survive:
 
@@ -360,13 +353,25 @@ The report is deterministic and model-free. It shows word-count movement, protec
 Turn a real, redacted bad rewrite into a fixture skeleton:
 
 ```bash
-python3 scripts/case_lab.py \
+python3 scripts/failure_fixture.py \
   --case-id thought_dump_example_99 \
-  --source "messy but redacted source" \
-  --rewrite "desired passing rewrite" \
+  --source-file source.local.md \
+  --failed-rewrite-file failed.local.md \
+  --desired-rewrite-file desired.local.md \
+  --redact-term "PrivateCo=[COMPANY_1]" \
+  --preserve-uncertainty
+```
+
+`failure_fixture.py` redacts obvious secrets/contact data, applies explicit replacements, audits the failed rewrite, audits the desired rewrite, and emits a public-safe `Case(...)` candidate. Prefer `--source-file`, `--failed-rewrite-file`, and `--desired-rewrite-file` for private drafts so text does not land in shell history. Use `redact_case.py` when you only need a redacted issue report:
+
+```bash
+python3 scripts/redact_case.py \
+  --case-id thought_dump_example_99 \
+  --source-file source.local.md \
+  --rewrite "bad but redacted output" \
+  --expected "desired passing rewrite" \
   --voice "dry little joke" \
-  --protected "real date" \
-  --forbid "In today's landscape"
+  --replace "PrivateCo=[COMPANY_1]"
 ```
 
 The workflow is simple: find a failure, audit it, convert it into a case, then teach Dittobot once instead of repeating the same warning forever.

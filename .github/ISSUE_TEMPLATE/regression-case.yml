@@ -7,6 +7,7 @@ body:
     attributes:
       value: |
         Use this when you already know the failure should become a fixture. Keep examples public-safe and redacted.
+        Prefer a `scripts/failure_fixture.py --case-only` output or other tool-redacted fixture candidate.
   - type: input
     id: case_id
     attributes:
@@ -34,14 +35,14 @@ body:
     id: source
     attributes:
       label: Source fixture
-      description: The source text the case should test.
+      description: Tool-redacted source text the case should test.
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
       label: Expected rewrite behavior
-      description: Describe or paste the expected output.
+      description: Describe or paste the tool-redacted expected output.
     validations:
       required: true
   - type: textarea

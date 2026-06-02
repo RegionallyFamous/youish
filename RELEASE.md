@@ -15,6 +15,11 @@ python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewr
 python3 scripts/rewrite_report.py --source "I think notice may be due in 10 days." --rewrite "Notice is due in 10 days." --protected "10 days" --preserve-uncertainty || true
 python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
 python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing."
+profile="$(mktemp)"
+python3 scripts/voice_profile.py compile --sample "This draft is not bad. It just walks into the room and apologizes for existing. I want the useful bit without the meeting oatmeal." --out "$profile"
+python3 scripts/voice_profile.py validate "$profile"
+python3 scripts/redact_case.py --case-id redacted_case_01 --source "Person A has nick@example.com and sk-abc123456789012345678." --rewrite "Person A shipped it." --expected "Person A still needs the note fixed." --json
+python3 scripts/failure_fixture.py --case-id fixture_case_01 --source "[[keep: 10 days]] [[voice: haunted changelog]] I think notice may be due in 10 days." --failed-rewrite "Notice is due in 10 days." --desired-rewrite "I think notice may be due in 10 days, haunted changelog and all." --preserve-uncertainty --allow-inline-private --json
 python3 scripts/build_plugin.py --version "$PLUGIN_VERSION" --validator ""
 python3 scripts/check_plugin_package.py dist/dittobot-plugin --version "$PLUGIN_VERSION"
 python3 -m py_compile scripts/*.py

@@ -7,6 +7,7 @@ body:
     attributes:
       value: |
         Thanks for helping make Dittobot sharper. Please remove private names, secrets, customer data, medical/legal details, and anything you do not want public.
+        For the safest report, run `python3 scripts/failure_fixture.py` or `python3 scripts/redact_case.py` locally and paste the tool-redacted public fixture candidate.
   - type: dropdown
     id: failure_type
     attributes:
@@ -28,7 +29,7 @@ body:
     id: source
     attributes:
       label: Source text
-      description: Redact anything private. Keep enough texture to reproduce the failure.
+      description: Paste tool-redacted public text. Keep enough texture to reproduce the failure.
       placeholder: Paste the messy draft, note, or prose sample here.
     validations:
       required: true
@@ -36,14 +37,14 @@ body:
     id: output
     attributes:
       label: Dittobot output
-      description: Paste the output that failed.
+      description: Paste the tool-redacted output that failed.
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
       label: Expected behavior
-      description: What should Dittobot have preserved, changed, avoided, or inferred?
+      description: What should Dittobot have preserved, changed, avoided, or inferred? Tool-redacted desired rewrites are ideal.
     validations:
       required: true
   - type: textarea

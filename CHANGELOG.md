@@ -14,7 +14,10 @@
 - Add deterministic Codex plugin package builder and package verifier.
 - Add Codex UI icon assets and wire them into skill and plugin metadata.
 - Add `scripts/rewrite_report.py` for model-free rewrite provenance reports.
+- Add `scripts/voice_profile.py` for compact, auditable voice profile contracts.
+- Add `scripts/redact_case.py` and `scripts/failure_fixture.py` for privacy-first bad rewrite reports and fixture candidates.
 - Add reusable fact-fence and voice-profile-card references.
+- Add real `[[boundary: ...]]` ledger parsing.
 - Add package-file manifest sharing between install drift checks and repo validation.
 - Add stale-file detection for copied installs and stage copy installs before replacing the current skill.
 - Add a progressive-disclosure word budget check for `SKILL.md`.

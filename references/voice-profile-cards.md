@@ -40,6 +40,34 @@ A voice profile transfers editing taste, not facts. It should help preserve how 
 - Current audience and artifact type can override a style habit.
 - Include `When not to apply` so a casual Slack voice does not leak into sensitive, legal, medical, financial, academic, or public-facing text.
 
+## JSON Contract
+
+Use `scripts/voice_profile.py` when a profile should be portable and auditable. The contract shape is:
+
+```json
+{
+  "schema_version": 1,
+  "profile_id": "default",
+  "profile_type": "voice_taste",
+  "token_budget": {
+    "max_card_words": 220,
+    "max_evidence_phrases": 5
+  },
+  "use": [],
+  "avoid": [],
+  "rhythm_diction": [],
+  "protected_quirks": [],
+  "evidence_phrases": [],
+  "when_not_to_apply": [],
+  "editing_rules": [],
+  "forbidden_imports": [],
+  "probe": {},
+  "warnings": []
+}
+```
+
+Validate contracts before reuse. Warnings about private facts, generic markers, or evidence phrases used as recipes should be reviewed before the profile is pasted into a prompt.
+
 ## Good Card Traits
 
 - Names what to preserve: bluntness, asymmetry, dry humor, skepticism, warmth, sentence shape, punctuation, or favorite plain words.

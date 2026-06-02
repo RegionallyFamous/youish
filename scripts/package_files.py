@@ -14,6 +14,7 @@ PACKAGE_FILES = (
     "scripts/audit.py",
     "scripts/case_lab.py",
     "scripts/check_install.py",
+    "scripts/failure_fixture.py",
     "scripts/failure_taxonomy.py",
     "scripts/install.py",
     "scripts/ledger.py",
@@ -21,7 +22,9 @@ PACKAGE_FILES = (
     "scripts/live_report.py",
     "scripts/package_files.py",
     "scripts/regression_100.py",
+    "scripts/redact_case.py",
     "scripts/rewrite_report.py",
     "scripts/validate_skill.py",
+    "scripts/voice_profile.py",
     "scripts/voice_probe.py",
 )
