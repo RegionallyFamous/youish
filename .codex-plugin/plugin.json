@@ -1,6 +1,6 @@
 {
   "name": "dittobot",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Voice-faithful rewrites for people who want AI to sound like them.",
   "skills": "./skills/",
   "author": {

@@ -21,6 +21,7 @@ OPENAI_YAML = ROOT / "agents" / "openai.yaml"
 INSTALL_SH = ROOT / "install.sh"
 SPEC_SKILL_ROOT = ROOT / "skills" / "dittobot"
 SKILL_WORD_LIMIT = 1900
+SOURCE_REPO_ROOT = (ROOT / "README.md").exists() and SPEC_SKILL_ROOT.exists()
 LOCAL_PATH_MARKERS = (
     "/" + "Users" + "/",
     "C:" + "\\" + "Users" + "\\",
@@ -109,15 +110,23 @@ def main() -> int:
                 fail("frontmatter license must be GPL-2.0-or-later", errors)
             if not description or len(description.split()) < 20:
                 fail("frontmatter description must be informative", errors)
-            if any(key not in {"name", "license", "description"} for key in data):
-                fail("frontmatter must contain only name, license, and description", errors)
+            allowed_keys = {"name", "license", "description"}
+            if not SOURCE_REPO_ROOT:
+                allowed_keys |= {"metadata"} | {
+                    key for key in data if key.startswith("github-")
+                }
+            if any(key not in allowed_keys for key in data):
+                if SOURCE_REPO_ROOT:
+                    fail("frontmatter must contain only name, license, and description", errors)
+                else:
+                    fail("frontmatter contains unsupported install metadata", errors)
             if "# Dittobot" not in body:
                 fail("SKILL.md body must contain # Dittobot heading", errors)
             if "python3 scripts/regression_100.py" not in body:
                 fail("SKILL.md validation command must be repo-relative", errors)
             if any(marker in body for marker in LOCAL_PATH_MARKERS):
                 fail("SKILL.md body must not contain machine-local paths", errors)
-            word_count = len(SKILL.read_text(encoding="utf-8").split())
+            word_count = len(body.split())
             if word_count > SKILL_WORD_LIMIT:
                 fail(
                     f"SKILL.md must stay under {SKILL_WORD_LIMIT} words for progressive disclosure; got {word_count}",

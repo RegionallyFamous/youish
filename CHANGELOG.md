@@ -4,6 +4,10 @@
 
 Nothing yet.
 
+## 0.2.2 - 2026-06-02
+
+- Let installed-copy validation tolerate GitHub CLI source-tracking metadata while keeping source repo frontmatter strict.
+
 ## 0.2.1 - 2026-06-02
 
 - Add repo plugin marketplace metadata so Dittobot can be exposed as a Codex marketplace source.

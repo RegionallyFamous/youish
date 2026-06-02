@@ -7,7 +7,7 @@ import re
 
 
 PLUGIN_NAME = "dittobot"
-DEFAULT_VERSION = "0.2.1"
+DEFAULT_VERSION = "0.2.2"
 PLUGIN_DESCRIPTION = "Voice-faithful rewrites for people who want AI to sound like them."
 SEMVER_RE = re.compile(
     r"^(0|[1-9]\d*)\."

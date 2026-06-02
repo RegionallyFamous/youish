@@ -177,19 +177,19 @@ That is the point. Drop in the stream of consciousness; get back the version tha
 Pinned GitHub CLI install:
 
 ```bash
-gh skill install RegionallyFamous/dittobot skills/dittobot --agent codex --scope user --pin v0.2.1
+gh skill install RegionallyFamous/dittobot skills/dittobot --agent codex --scope user --pin v0.2.2
 ```
 
 Terminal fallback:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/v0.2.1/install.sh | DITTOBOT_REF=v0.2.1 bash
+curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/v0.2.2/install.sh | DITTOBOT_REF=v0.2.2 bash
 ```
 
 Codex plugin marketplace source:
 
 ```bash
-codex plugin marketplace add RegionallyFamous/dittobot --ref v0.2.1
+codex plugin marketplace add RegionallyFamous/dittobot --ref v0.2.2
 ```
 
 Requires `curl`, `tar`, and Python 3 for the terminal fallback. It installs a copy, backs up an existing Dittobot install, verifies itself, and does not use `sudo`.
