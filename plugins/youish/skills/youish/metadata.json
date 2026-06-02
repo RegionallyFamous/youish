@@ -1,7 +1,7 @@
 {
   "name": "youish",
   "displayName": "Youish",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "organization": "Regionally Famous",
   "date": "June 2026",
   "abstract": "Voice-faithful rewriting for AI agents, designed to preserve a writer's claims, stance, rhythm, uncertainty, useful weirdness, and exact constraints while removing clutter and generic AI polish. Includes compact runtime instructions, optional quality-gate references, and deterministic regression checks for facts, quotes, identity markers, output shape, source-only thought dumps, and live-eval integrity.",
@@ -55,7 +55,7 @@
         "field": "Topic chips",
         "status": "skills.sh-generated",
         "youishValue": "Writing, Editing, Copywriting, Marketing, Agent workflows",
-        "source": "Signals from SKILL.md, metadata.json skillsSh.topics, and Skills.sh topic classification."
+        "source": "Skills.sh topic classification. This repo keeps matching discovery notes in SKILL.md and metadata.json, but Skills.sh owns the displayed chips."
       },
       {
         "field": "Installation",
@@ -65,9 +65,9 @@
       },
       {
         "field": "Summary",
-        "status": "source-controlled",
+        "status": "repo-documented",
         "youishValue": "Voice-faithful rewriting and editing for messy drafts, notes, emails, posts, captions, docs, and reusable voice profiles.",
-        "source": "metadata.json skillsSh.summary and summaryBullets."
+        "source": "README.md and metadata.json carry the prepared summary. Skills.sh may derive, cache, or omit a Summary block unless its index renders one."
       },
       {
         "field": "SKILL.md",
@@ -112,7 +112,7 @@
         "source": "Skills.sh partner audits."
       }
     ],
-    "sourceControlledFields": [
+    "repoControlledFields": [
       "name",
       "description",
       "license",
@@ -121,11 +121,14 @@
       "install command",
       "repository",
       "grouping",
+      "SKILL.md preview"
+    ],
+    "catalogSignals": [
       "topics",
       "agents",
       "summary",
       "summary bullets",
-      "SKILL.md preview"
+      "summary markdown"
     ],
     "skillsShGeneratedFields": [
       "breadcrumb",

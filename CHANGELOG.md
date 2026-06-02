@@ -4,6 +4,10 @@
 
 Nothing yet.
 
+## 0.3.5 - 2026-06-02
+
+- Clarify the complete Skills.sh listing field map so repo-controlled, repo-documented, discovery-signal, and Skills.sh-generated fields are labeled honestly.
+
 ## 0.3.4 - 2026-06-02
 
 - Fix the verified release-ZIP installer by normalizing the GitHub release asset URL to the lowercase repository path required by public downloads.
