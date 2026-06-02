@@ -1,16 +1,17 @@
 # Release Checklist
 
-Dittobot's detailed release runbook now lives in the wiki:
+Dittobot's detailed release runbook lives in the wiki:
 
 https://github.com/RegionallyFamous/dittobot/wiki/Release-Checklist
 
 Short version:
 
 1. Update `CHANGELOG.md`.
-2. Run the deterministic validation suite.
-3. Build and check the plugin package.
-4. Generate the public scorecard.
-5. Push and wait for GitHub Actions.
-6. Tag the validated commit and create the GitHub release.
+2. Run deterministic proof: `python3 scripts/validate_skill.py`, `python3 scripts/regression_100.py`, and `python3 scripts/scorecard.py --format json`.
+3. Build and check the plugin package: `python3 scripts/build_plugin.py --version X.Y.Z`, then `python3 scripts/check_plugin_package.py dist/dittobot-plugin --version X.Y.Z`.
+4. Build release assets: `python3 scripts/build_skill_zip.py --version X.Y.Z`, `python3 scripts/build_plugin_zip.py dist/dittobot-plugin --version X.Y.Z`, and `python3 scripts/write_checksums.py dist/dittobot-skill-vX.Y.Z.zip dist/dittobot-plugin-vX.Y.Z.zip`.
+5. Generate the public scorecard with `scripts/scorecard.py --plugin-dir dist/dittobot-plugin --version X.Y.Z`.
+6. Push and wait for GitHub Actions.
+7. Tag the validated commit and create the GitHub release with `dittobot-skill-vX.Y.Z.zip`, `dittobot-plugin-vX.Y.Z.zip`, and `SHA256SUMS`.
 
-Use live eval only as a bounded smoke test. Keep it separate from deterministic release proof, and use a real threshold such as `--fail-under-score 0.95` when citing live transcript scorecards as passing.
+Use live eval only as a bounded smoke test. Deterministic checks are release proof. Only call a live transcript score "passing" if it was run with an explicit threshold such as `--fail-under-score 0.95`.

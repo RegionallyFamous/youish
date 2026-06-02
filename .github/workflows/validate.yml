@@ -21,12 +21,18 @@ jobs:
         run: |
           python3 scripts/sync_skill_package.py
           git diff --exit-code -- skills/dittobot
+          python3 skills/dittobot/scripts/validate_skill.py
+          python3 skills/dittobot/scripts/regression_100.py
+          python3 skills/dittobot/scripts/install.py --copy --install-dir "$RUNNER_TEMP/mirror-install/dittobot"
+          python3 skills/dittobot/scripts/check_install.py --install-dir "$RUNNER_TEMP/mirror-install/dittobot"
 
       - name: Validate skill metadata
         run: python3 scripts/validate_skill.py
 
       - name: Check public README copy
-        run: python3 scripts/public_copy_check.py --description "Paste messy notes. Get sharp rewrites that sound like you on a good day."
+        run: |
+          python3 scripts/public_copy_check.py --description "Paste messy notes. Get sharp rewrites that sound like you on a good day."
+          grep "^## 0.2.0 - " CHANGELOG.md
 
       - name: Run deterministic regression fixtures
         run: python3 scripts/regression_100.py
@@ -98,9 +104,49 @@ jobs:
           printf 'do not replace me\n' > dist/not-a-plugin/README.md
           ! python3 scripts/build_plugin.py --output-dir dist/not-a-plugin --validator ""
           rm -rf dist/not-a-plugin
+          ok_validator="$RUNNER_TEMP/ok-validator.py"
+          printf 'import pathlib, sys\npathlib.Path(sys.argv[1], "validator-ran.txt").write_text("yes")\n' > "$ok_validator"
+          fail_validator="$RUNNER_TEMP/fail-validator.py"
+          printf 'raise SystemExit(7)\n' > "$fail_validator"
+          python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin-validator" --version 0.2.0 --validator "$ok_validator"
+          test -f "$RUNNER_TEMP/dittobot-plugin-validator/validator-ran.txt"
+          ! python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin-validator" --version 0.2.0
+          ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin-validator-fail" --version 0.2.0 --validator "$fail_validator"
           ! python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --validator "$RUNNER_TEMP/missing-validator.py" --require-validator
           python3 scripts/build_plugin.py --output-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --validator ""
           python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0
+          printf 'secret=nope\n' > "$RUNNER_TEMP/dittobot-plugin/skills/dittobot/.env"
+          ! python3 scripts/check_plugin_package.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0
+          ! python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --format json
+          ! python3 scripts/build_plugin_zip.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --output-dir "$RUNNER_TEMP"
+          rm "$RUNNER_TEMP/dittobot-plugin/skills/dittobot/.env"
+          ! python3 scripts/build_skill_zip.py --version not-semver --output-dir "$RUNNER_TEMP"
+          python3 scripts/build_skill_zip.py --version 0.2.0 --output-dir "$RUNNER_TEMP"
+          python3 scripts/check_skill_zip.py "$RUNNER_TEMP/dittobot-skill-v0.2.0.zip"
+          python3 - "$RUNNER_TEMP/dittobot-skill-v0.2.0.zip" <<'PY'
+          import sys
+          import zipfile
+          with zipfile.ZipFile(sys.argv[1]) as handle:
+              entries = [info.filename for info in handle.infolist() if not info.filename.endswith("/")]
+          assert entries[0] == "dittobot/SKILL.md"
+          assert all(entry.startswith("dittobot/") for entry in entries)
+          assert "dittobot/README.md" not in entries
+          PY
+          python3 scripts/build_plugin_zip.py "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --output-dir "$RUNNER_TEMP"
+          python3 scripts/check_plugin_zip.py "$RUNNER_TEMP/dittobot-plugin-v0.2.0.zip" --version 0.2.0
+          unzip_dir="$RUNNER_TEMP/unzipped-plugin"
+          mkdir -p "$unzip_dir"
+          python3 - "$RUNNER_TEMP/dittobot-plugin-v0.2.0.zip" "$unzip_dir" <<'PY'
+          import sys
+          import zipfile
+          with zipfile.ZipFile(sys.argv[1]) as handle:
+              handle.extractall(sys.argv[2])
+          PY
+          python3 scripts/check_plugin_package.py "$unzip_dir" --version 0.2.0
+          python3 scripts/scorecard.py --plugin-dir "$unzip_dir" --version 0.2.0 --format json | grep '"status": "PASS"'
+          python3 scripts/write_checksums.py "$RUNNER_TEMP/dittobot-skill-v0.2.0.zip" "$RUNNER_TEMP/dittobot-plugin-v0.2.0.zip" --output "$RUNNER_TEMP/SHA256SUMS"
+          grep "dittobot-skill-v0.2.0.zip" "$RUNNER_TEMP/SHA256SUMS"
+          grep "dittobot-plugin-v0.2.0.zip" "$RUNNER_TEMP/SHA256SUMS"
           python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 | grep "Dittobot Public Eval Scorecard"
           scorecard="$RUNNER_TEMP/scorecard.json"
           python3 scripts/scorecard.py --plugin-dir "$RUNNER_TEMP/dittobot-plugin" --version 0.2.0 --format json > "$scorecard"

@@ -101,13 +101,16 @@ def main() -> int:
             fail(str(exc), errors)
         else:
             name = data.get("name")
+            license_id = data.get("license")
             description = data.get("description")
             if name != "dittobot":
                 fail("frontmatter name must be dittobot", errors)
+            if license_id != "GPL-2.0-or-later":
+                fail("frontmatter license must be GPL-2.0-or-later", errors)
             if not description or len(description.split()) < 20:
                 fail("frontmatter description must be informative", errors)
-            if any(key not in {"name", "description"} for key in data):
-                fail("frontmatter must contain only name and description", errors)
+            if any(key not in {"name", "license", "description"} for key in data):
+                fail("frontmatter must contain only name, license, and description", errors)
             if "# Dittobot" not in body:
                 fail("SKILL.md body must contain # Dittobot heading", errors)
             if "python3 scripts/regression_100.py" not in body:

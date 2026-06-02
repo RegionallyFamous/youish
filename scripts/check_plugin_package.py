@@ -22,10 +22,23 @@ SEMVER_RE = re.compile(
     r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
 )
+EXPECTED_PLUGIN_FILES = {".codex-plugin/plugin.json"} | {
+    f"skills/dittobot/{rel}" for rel in PACKAGE_FILES
+}
 
 
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def package_files_in(path: Path) -> set[str]:
+    files: set[str] = set()
+    for item in path.rglob("*"):
+        if not item.is_file():
+            continue
+        rel = item.relative_to(path)
+        files.add(rel.as_posix())
+    return files
 
 
 def main() -> int:
@@ -71,6 +84,12 @@ def main() -> int:
                 errors.append(f"plugin interface.{field} points to a missing file")
 
     skill_root = plugin / "skills" / "dittobot"
+    actual_files = package_files_in(plugin) if plugin.exists() else set()
+    for rel in sorted(EXPECTED_PLUGIN_FILES - actual_files):
+        errors.append(f"missing plugin file: {rel}")
+    for rel in sorted(actual_files - EXPECTED_PLUGIN_FILES):
+        errors.append(f"unexpected plugin file: {rel}")
+
     for rel in PACKAGE_FILES:
         source = repo / rel
         packaged = skill_root / rel

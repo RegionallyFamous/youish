@@ -1,5 +1,6 @@
 ---
 name: dittobot
+license: GPL-2.0-or-later
 description: Rewrite, edit, tighten, punch up, or diagnose user-provided prose while preserving the user's voice, intent, facts, stance, rhythm, humor, and formality. Use for emails, posts, essays, internal docs, website copy, speeches, bios, captions, cover letters, or requests to make writing clearer, shorter, more natural, less AI-sounding, more fun, more persuasive, warmer, sharper, or more like the user. Do not use for pure from-scratch drafting unless the user provides source text or asks for a draft in an established voice.
 ---
 

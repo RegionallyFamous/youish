@@ -178,13 +178,14 @@ Terminal fallback:
 curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/main/install.sh | bash
 ```
 
-GitHub CLI skill install:
+Requires `curl`, `tar`, and Python 3. It installs a copy, backs up an existing Dittobot install, and does not use `sudo`.
 
-```bash
-gh skill install RegionallyFamous/dittobot dittobot --agent codex --scope user
-```
+Other useful install paths:
 
-If you want a live symlink, clone the repo instead:
+- Pinned GitHub CLI install: `gh skill install RegionallyFamous/dittobot dittobot@v0.2.0 --agent codex --scope user`
+- Uploadable skill ZIP: download `dittobot-skill-v0.2.0.zip` from [Releases](https://github.com/RegionallyFamous/dittobot/releases) and upload it anywhere local skill uploads are supported.
+
+If you want to edit Dittobot locally and have Codex see changes immediately:
 
 ```bash
 git clone https://github.com/RegionallyFamous/dittobot.git

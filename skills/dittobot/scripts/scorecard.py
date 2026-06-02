@@ -39,6 +39,15 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def package_files_in(path: Path) -> set[str]:
+    files: set[str] = set()
+    for item in path.rglob("*"):
+        if not item.is_file():
+            continue
+        files.add(item.relative_to(path).as_posix())
+    return files
+
+
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -246,6 +255,14 @@ def plugin_summary(plugin_dir: str | None, version: str | None) -> dict[str, Any
             errors.append(f"plugin version must be {version}")
         if manifest.get("skills") != "./skills/":
             errors.append("plugin skills path must be ./skills/")
+    expected_files = {".codex-plugin/plugin.json"} | {
+        f"skills/dittobot/{rel}" for rel in PACKAGE_FILES
+    }
+    actual_files = package_files_in(plugin) if plugin.exists() else set()
+    for rel in sorted(expected_files - actual_files):
+        errors.append(f"missing plugin file: {rel}")
+    for rel in sorted(actual_files - expected_files):
+        errors.append(f"unexpected plugin file: {rel}")
     for rel in PACKAGE_FILES:
         source = ROOT / rel
         packaged = plugin / "skills" / "dittobot" / rel
