@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from plugin_manifest import DEFAULT_VERSION, manifest, require_semver
+from package_files import PACKAGE_FILES, digest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,8 +56,10 @@ def main() -> int:
             if entry.get("name") != "dittobot":
                 errors.append("marketplace plugin name must be dittobot")
             source = entry.get("source", {})
-            if source != {"source": "local", "path": "./"}:
-                errors.append('marketplace source must be {"source": "local", "path": "./"}')
+            if source != {"source": "local", "path": "./plugins/dittobot"}:
+                errors.append(
+                    'marketplace source must be {"source": "local", "path": "./plugins/dittobot"}'
+                )
             policy = entry.get("policy", {})
             if policy.get("installation") != "AVAILABLE":
                 errors.append("marketplace policy.installation must be AVAILABLE")
@@ -64,6 +67,22 @@ def main() -> int:
                 errors.append("marketplace policy.authentication must be ON_INSTALL")
             if entry.get("category") != "Productivity":
                 errors.append("marketplace category must be Productivity")
+
+    plugin_mirror = ROOT / "plugins" / "dittobot"
+    mirror_manifest = plugin_mirror / ".codex-plugin" / "plugin.json"
+    if not mirror_manifest.exists():
+        errors.append("missing marketplace plugin mirror manifest")
+    else:
+        payload = json.loads(mirror_manifest.read_text(encoding="utf-8"))
+        if payload != manifest(args.version):
+            errors.append("marketplace plugin mirror manifest differs from scripts/plugin_manifest.py")
+    for rel in PACKAGE_FILES:
+        source = ROOT / rel
+        packaged = plugin_mirror / "skills" / "dittobot" / rel
+        if not packaged.exists():
+            errors.append(f"missing marketplace plugin skill file: {rel}")
+        elif source.exists() and digest(source) != digest(packaged):
+            errors.append(f"stale marketplace plugin skill file: {rel}")
 
     if errors:
         print("Marketplace check failed:")

@@ -29,6 +29,13 @@ GUARDRAILS: tuple[tuple[str, GuardrailCheck], ...] = (
     ("protected_facts", lambda case: bool(case.protected)),
     ("claim_fidelity", lambda case: bool(case.required_claims or case.forbid_assertions)),
     ("uncertainty_handling", lambda case: case.preserve_uncertainty),
+    ("stance_preservation", lambda case: bool(case.preserve_stance)),
+    ("artifact_cleanup", lambda case: bool(case.forbid_artifacts)),
+    ("unsupported_entity_guard", lambda case: case.forbid_added_entities),
+    (
+        "anti_generic_polish",
+        lambda case: bool(case.forbid) or case.prompt_mode == "source_only",
+    ),
     ("source_only_default_inference", lambda case: case.prompt_mode == "source_only"),
     ("exact_word_constraints", lambda case: case.exact_words is not None),
     ("no_dash_constraints", lambda case: case.no_dash),
@@ -413,7 +420,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--transcript", action="append", default=[], help="Optional live eval JSONL transcript.")
     parser.add_argument("--plugin-dir", help="Optional generated plugin package to check.")
-    parser.add_argument("--version", default="0.2.2", help="Expected plugin version.")
+    parser.add_argument("--version", default="0.2.3", help="Expected plugin version.")
     parser.add_argument("--require-complete-suite", action="store_true")
     parser.add_argument("--public", action="store_true", help="Fail if transcript records contain raw source/output text.")
     parser.add_argument("--fail-under-score", type=float, default=1.0)

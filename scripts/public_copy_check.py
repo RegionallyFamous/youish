@@ -15,7 +15,8 @@ README = ROOT / "README.md"
 REQUIRED_SECTIONS = (
     "## The Point",
     "## Watch It Work",
-    "## The Skeptical Writer Case, Answered",
+    "## What Skeptics Are Right About",
+    "## When Not To Use It",
     "## What Dittobot Is",
     "## Proof, Not Vibes",
     "## The Useful Boring Stuff",
@@ -26,7 +27,9 @@ REQUIRED_PHRASES = (
     "teach it taste",
     "not a ghostwriter",
     "voice-preserving editor",
-    "I agreed with the diagnosis and hated the prescription",
+    "It preserves claims, stance, uncertainty",
+    "It refuses unsupported facts",
+    "When disclosure matters",
     "Use $skill-installer to install Dittobot",
     "A risograph-style Dittobot workshop",
 )
@@ -122,7 +125,8 @@ def check_heading_order(markdown: str, errors: list[str]) -> None:
         "## What Dittobot Is",
         "## The Point",
         "## Watch It Work",
-        "## The Skeptical Writer Case, Answered",
+        "## What Skeptics Are Right About",
+        "## When Not To Use It",
         "## Use It",
         "## Proof, Not Vibes",
     ]

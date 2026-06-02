@@ -40,12 +40,17 @@ def digest(path: Path) -> str:
 
 def mirror_mismatches(root: Path) -> list[str]:
     mirror = root / "skills" / "dittobot"
+    plugin_mirror = root / "plugins" / "dittobot" / "skills" / "dittobot"
     mismatches: list[str] = []
-    for rel in PACKAGE_FILES:
-        source = root / rel
-        packaged = mirror / rel
-        if not source.exists() or not packaged.exists() or digest(source) != digest(packaged):
-            mismatches.append(rel)
+    for label, package_root in (
+        ("skills/dittobot", mirror),
+        ("plugins/dittobot/skills/dittobot", plugin_mirror),
+    ):
+        for rel in PACKAGE_FILES:
+            source = root / rel
+            packaged = package_root / rel
+            if not source.exists() or not packaged.exists() or digest(source) != digest(packaged):
+                mismatches.append(f"{label}/{rel}")
     return mismatches
 
 

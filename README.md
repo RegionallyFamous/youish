@@ -40,6 +40,12 @@ For hard work, it expands into a silent 20-pass editorial loop. For proof, the r
 
 Normal use is still simple: paste the mess and get the clean version.
 
+Voice-faithful means something testable here:
+
+- It preserves claims, stance, uncertainty, rhythm, distinctive phrases, and reader action.
+- It refuses unsupported facts, invented brands, fake certainty, extra jokes, and generic polish that says less.
+- It proves those promises with deterministic fixtures, mutation checks, package validation, and release scorecards.
+
 ## The Point
 
 The answer is not "let AI write for you." The answer is "teach the tool your voice."
@@ -149,9 +155,9 @@ Rewrite:
 I am annoyed that people saw bad AI writing and decided the answer was banning the tool. But I am also genuinely excited, because we can teach it taste instead of pretending pencils are holy now.
 ```
 
-## The Skeptical Writer Case, Answered
+## What Skeptics Are Right About
 
-The AI-writing backlash has receipts. People have seen enough soulless, padded, fake-confident slop to be annoyed. Good. Stay annoyed. Just aim the annoyance at the workflow instead of pretending the tool is cursed.
+The AI-writing backlash has receipts. People have seen enough soulless, padded, fake-confident slop to be annoyed. Good. Stay annoyed. Just aim the annoyance at the workflow instead of pretending the tool has only one possible setting.
 
 - **"It sounds like nobody."** Correct, if you ask it to invent a voice. Dittobot starts from your words. The stance, rhythm, humor, pressure, and weird little phrase are already there.
 - **"It gets bloated."** Bad AI writes like it is being paid by the clause. Dittobot cuts filler and returns the rewrite without a lecture unless you ask for one.
@@ -161,6 +167,12 @@ The AI-writing backlash has receipts. People have seen enough soulless, padded, 
 - **"The tells give it away."** Dashes are not the crime. Predictability is. Dittobot can obey no-dash rules, but the deeper fix is cadence and taste.
 
 The problem is not using AI. The problem is accepting the first bland answer, then blaming the whole category because nobody steered.
+
+## When Not To Use It
+
+Dittobot needs source text or a real voice sample. It is not for making up legal, medical, financial, academic, or factual certainty. It should not bypass publication policies, disclosure rules, or common sense around private data.
+
+When disclosure matters, say the true thing: edited with AI from my draft, grammar and clarity assistance only, or AI-assisted line edit with facts checked by me. Authorship is not a magic spell. Be honest about the workflow and keep responsibility where it belongs.
 
 ## Use It
 
@@ -177,19 +189,20 @@ That is the point. Drop in the stream of consciousness; get back the version tha
 Pinned GitHub CLI install:
 
 ```bash
-gh skill install RegionallyFamous/dittobot skills/dittobot --agent codex --scope user --pin v0.2.2
+gh skill install RegionallyFamous/dittobot skills/dittobot --agent codex --scope user --pin v0.2.3
 ```
 
 Terminal fallback:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/v0.2.2/install.sh | DITTOBOT_REF=v0.2.2 bash
+curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/v0.2.3/install.sh | DITTOBOT_REF=v0.2.3 bash
 ```
 
 Codex plugin marketplace source:
 
 ```bash
-codex plugin marketplace add RegionallyFamous/dittobot --ref v0.2.2
+codex plugin marketplace add RegionallyFamous/dittobot --ref v0.2.3
+codex plugin add dittobot@dittobot
 ```
 
 Requires `curl`, `tar`, and Python 3 for the terminal fallback. It installs a copy, backs up an existing Dittobot install, verifies itself, and does not use `sudo`.
@@ -204,7 +217,17 @@ Dittobot's quality story is not "trust me, it feels good." The repo checks voice
 
 This does not prove literary taste. It proves Dittobot keeps the constraints it claims to protect: facts, uncertainty, length, format, and anti-generic behavior.
 
-The scorecard is intentionally boring: complete-suite gates, stable failure codes, hashes, package checks, and public-safe reporting.
+| Promise | How It Is Tested |
+|---|---|
+| Keep the user's voice | Voice marker fixtures, profile contracts, and mutation tests that remove keeper phrases |
+| Preserve facts and claims | Protected fact checks, required claims, forbidden assertions, numeric drift checks |
+| Preserve uncertainty | Legal and technical cases that fail if "maybe" becomes false certainty |
+| Refuse invented details | Unsupported detail markers, invented numbers, and unsupported entity detection |
+| Avoid generic AI polish | Buzzword checks plus pattern tests for shiny but empty phrasing |
+| Respect constraints | Exact word count, no-dash, format, wrapper, and paragraph-shape checks |
+| Turn notes into usable text | Source-only thought-dump cases with artifact cleanup and reader-action checks |
+
+The scorecard is intentionally boring: complete-suite gates, stable failure codes, hashes, package checks, marketplace checks, and public-safe reporting.
 
 Taste up front. Receipts in the back.
 
@@ -225,10 +248,10 @@ The manuals live in the wiki so the README can stay focused on the why and the e
 
 The critique is worth taking seriously. Research on human-AI co-writing has found that writers care about preserving authentic voice, and other work has found AI suggestions can flatten writing toward dominant styles. Dittobot is a practical answer to that risk: keep the speed, reject the flattening.
 
-- ["It was 80% me, 20% AI": Seeking Authenticity in Co-Writing with Large Language Models](https://arxiv.org/abs/2411.13032)
-- [AI Suggestions Homogenize Writing Toward Western Styles and Diminish Cultural Nuances](https://arxiv.org/abs/2409.11360)
-- [Digital.gov: Principles of plain language](https://digital.gov/guides/plain-language/principles)
-- [CPSC: Plain Language Principles](https://www.cpsc.gov/About-CPSC/Policies-Statements-and-Directives/plain-language-principles)
+- ["It was 80% me, 20% AI": Seeking Authenticity in Co-Writing with Large Language Models](https://arxiv.org/abs/2411.13032): authenticity depends on writers feeling the final piece still carries their choices.
+- [AI Suggestions Homogenize Writing Toward Western Styles and Diminish Cultural Nuances](https://arxiv.org/abs/2409.11360): suggestion systems can flatten voice, so voice preservation has to be a first-class requirement.
+- [Digital.gov: Principles of plain language](https://digital.gov/guides/plain-language/principles): write for the audience, make the useful action clear, and cut clutter.
+- [CPSC: Plain Language Principles](https://www.cpsc.gov/About-CPSC/Policies-Statements-and-Directives/plain-language-principles): plain writing is not dumbed-down writing. It is respect for the reader's time.
 
 ## About The Name
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -37,6 +38,13 @@ def assert_safe_release_dir(path: Path) -> None:
         raise SystemExit("Release directory name must start with release-v.")
 
 
+def assert_safe_dist_child(path: Path) -> None:
+    dist = (ROOT / "dist").resolve()
+    resolved = path.resolve()
+    if resolved == dist or dist not in resolved.parents:
+        raise SystemExit("Build directory must live under dist/.")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", default=DEFAULT_VERSION, help="Strict semver release version.")
@@ -54,10 +62,12 @@ def main() -> int:
     ).resolve()
     assert_safe_release_dir(release_dir)
 
-    if release_dir.exists():
-        shutil.rmtree(release_dir)
-    release_dir.mkdir(parents=True, exist_ok=True)
-    work_dir = release_dir / "_work"
+    build_dir = release_dir.parent / f".{release_dir.name}.build-{os.getpid()}"
+    assert_safe_dist_child(build_dir)
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+    build_dir.mkdir(parents=True, exist_ok=True)
+    work_dir = build_dir / "_work"
     plugin_dir = work_dir / "dittobot-plugin"
     work_dir.mkdir()
 
@@ -91,10 +101,10 @@ def main() -> int:
             "--version",
             args.version,
             "--output-dir",
-            str(release_dir),
+            str(build_dir),
         ]
     )
-    skill_zip = release_dir / f"dittobot-skill-v{args.version}.zip"
+    skill_zip = build_dir / f"dittobot-skill-v{args.version}.zip"
     run([sys.executable, "scripts/check_skill_zip.py", str(skill_zip)])
     run(
         [
@@ -104,10 +114,10 @@ def main() -> int:
             "--version",
             args.version,
             "--output-dir",
-            str(release_dir),
+            str(build_dir),
         ]
     )
-    plugin_zip = release_dir / f"dittobot-plugin-v{args.version}.zip"
+    plugin_zip = build_dir / f"dittobot-plugin-v{args.version}.zip"
     run(
         [
             sys.executable,
@@ -117,7 +127,7 @@ def main() -> int:
             args.version,
         ]
     )
-    scorecard = release_dir / f"dittobot-scorecard-v{args.version}.json"
+    scorecard = build_dir / f"dittobot-scorecard-v{args.version}.json"
     with scorecard.open("w", encoding="utf-8") as handle:
         run(
             [
@@ -140,19 +150,22 @@ def main() -> int:
             str(plugin_zip),
             str(scorecard),
             "--output",
-            str(release_dir / "SHA256SUMS"),
+            str(build_dir / "SHA256SUMS"),
         ]
     )
     run(
         [
             sys.executable,
             "scripts/check_release_assets.py",
-            str(release_dir),
+            str(build_dir),
             "--version",
             args.version,
         ]
     )
     shutil.rmtree(work_dir)
+    if release_dir.exists():
+        shutil.rmtree(release_dir)
+    build_dir.rename(release_dir)
 
     print()
     print(f"Release assets are ready in {release_dir}:")

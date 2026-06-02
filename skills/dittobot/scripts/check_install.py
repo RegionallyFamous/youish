@@ -23,6 +23,33 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def skill_parts(path: Path) -> tuple[dict[str, str], str]:
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        return {}, text
+    _start, frontmatter, body = text.split("---\n", 2)
+    scalars: dict[str, str] = {}
+    for line in frontmatter.splitlines():
+        if line.startswith((" ", "\t")) or ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        scalars[key.strip()] = value.strip()
+    return scalars, body
+
+
+def files_match(repo_file: Path, installed_file: Path, rel: str) -> bool:
+    if rel != "SKILL.md":
+        return digest(repo_file) == digest(installed_file)
+    repo_meta, repo_body = skill_parts(repo_file)
+    installed_meta, installed_body = skill_parts(installed_file)
+    if repo_body != installed_body:
+        return False
+    for key in ("name", "license", "description"):
+        if repo_meta.get(key) != installed_meta.get(key):
+            return False
+    return True
+
+
 def package_files_in(path: Path) -> set[str]:
     files: set[str] = set()
     for item in path.rglob("*"):
@@ -66,7 +93,7 @@ def main() -> int:
             source_missing.append(rel)
         elif not installed_file.exists():
             missing.append(rel)
-        elif digest(repo_file) != digest(installed_file):
+        elif not files_match(repo_file, installed_file, rel):
             mismatches.append(rel)
 
     if not install_path.is_symlink():

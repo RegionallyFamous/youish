@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO="${DITTOBOT_REPO:-RegionallyFamous/dittobot}"
-REF="${DITTOBOT_REF:-v0.2.2}"
+REF="${DITTOBOT_REF:-v0.2.3}"
 
 if [ -n "${DITTOBOT_ARCHIVE_URL:-}" ]; then
   ARCHIVE_URL="$DITTOBOT_ARCHIVE_URL"
@@ -47,6 +47,24 @@ PY
     printf 'Downloaded archive checksum mismatch.\nExpected: %s\nActual:   %s\n' "$DITTOBOT_ARCHIVE_SHA256" "$actual_sha" >&2
     exit 1
   fi
+fi
+if ! tar -tzf "$archive" >/dev/null; then
+  printf 'Downloaded archive could not be listed safely.\n' >&2
+  exit 1
+fi
+while IFS= read -r entry; do
+  case "$entry" in
+    /*|../*|*/../*|*'/..'|'.'|'')
+      printf 'Downloaded archive contains an unsafe path: %s\n' "$entry" >&2
+      exit 1
+      ;;
+  esac
+done < <(tar -tzf "$archive")
+if tar -tvzf "$archive" | awk '$1 ~ /^[lh]/ { exit 1 }'; then
+  :
+else
+  printf 'Downloaded archive contains symlinks or hardlinks; refusing to install.\n' >&2
+  exit 1
 fi
 tar -xzf "$archive" -C "$tmpdir"
 

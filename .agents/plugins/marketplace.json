@@ -8,7 +8,7 @@
       "name": "dittobot",
       "source": {
         "source": "local",
-        "path": "./"
+        "path": "./plugins/dittobot"
       },
       "policy": {
         "installation": "AVAILABLE",

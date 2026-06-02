@@ -26,7 +26,7 @@ For vague requests such as "make this better," preserve meaning, facts, stance, 
 
 For raw notes, rough drafts, fragments, or stream-of-consciousness dumps with no explicit task, assume the user wants finished prose. Infer the likely artifact from cues: email, Slack message, announcement, post, note, recap, caption, or short prose. If no form is clear, return a polished short prose version. Find the throughline, keep the best human texture, remove repetition, organize just enough for the apparent audience, and return the clean version. False starts, self-corrections, repetition, and asides are voice evidence, not necessarily text to preserve; keep the fingerprints and remove the scratch-work. Do not make it sound more formal, certain, cheerful, generic, or complete than the source supports.
 
-For reader-facing text, cold-read as the target reader: main point, stakes, next action, limits. If unclear, front-load and chunk.
+For reader-facing text, cold-read as the target reader: main point, stakes, next action, limits. If unclear, front-load the reader's next move.
 
 Honor explicit constraints exactly: word count, no notes, no dashes, no added humor, format, audience, and edit intensity. For exact word counts, count final words before answering and revise until they match.
 
@@ -87,7 +87,7 @@ If not, revert or soften the change.
 1. **Intent:** name the job.
 2. **Audience:** tune to reader needs and context.
 3. **Voice:** catch tone, cadence, diction, punctuation, and texture.
-4. **Keepers:** preserve best lines, jokes, idioms, and emotional beats.
+4. **Keepers:** preserve strongest lines, sentence shapes, jokes, and emotional beats.
 5. **Meaning:** protect facts, chronology, claims, scope, and commitments.
 6. **Structure:** move ideas only when order blocks comprehension.
 7. **Opening:** make the first sentence useful, honest, and alive.
@@ -109,7 +109,7 @@ If not, revert or soften the change.
 
 Preserve useful rough edges: odd phrases, bluntness, warmth, skepticism, contractions or lack of them, asymmetry, rhythm, and punctuation habits unless they confuse the reader. Remove fog, not fingerprints.
 
-Preserve dialect, code-switching, regional idiom, profanity, and intentional nonstandard grammar unless the user asks to standardize or the audience/risk requires it.
+Preserve dialect, code-switching, regional idiom, profanity, culturally situated phrasing, and intentional nonstandard grammar unless the user asks to standardize or the audience/risk requires it.
 
 Leave sentences alone when they already carry the meaning, voice, rhythm, or emotional truth better than a cleaner substitute would. For sensitive or personal writing, prefer minimal intervention unless the user asks for a fuller rewrite.
 

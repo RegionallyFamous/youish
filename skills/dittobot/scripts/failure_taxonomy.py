@@ -6,6 +6,7 @@ from __future__ import annotations
 
 RULES = (
     ("lost_voice_marker", "voice_loss", ("lost voice markers",)),
+    ("lost_stance_marker", "stance_drift", ("lost stance markers",)),
     ("missing_required_term", "fact_loss", ("missing required terms",)),
     ("lost_protected_fact", "fact_loss", ("lost protected facts",)),
     ("lost_exact_substring", "fact_loss", ("lost exact substrings",)),
@@ -13,6 +14,7 @@ RULES = (
     ("forbidden_assertion", "claim_drift", ("forbidden assertions appeared",)),
     ("invented_detail", "unsupported_invention", ("invented-detail markers",)),
     ("invented_number", "unsupported_invention", ("invented numeric claims",)),
+    ("unsupported_entity", "unsupported_invention", ("unsupported entities appeared",)),
     ("lost_uncertainty", "uncertainty_drift", ("lost uncertainty marker",)),
     ("modality_drift", "uncertainty_drift", ("modality drift markers",)),
     ("causality_drift", "causality_drift", ("causality drift markers",)),
@@ -42,9 +44,14 @@ RULES = (
 
 BUCKET_RULES = (
     ("voice_loss", ("lost voice markers",)),
+    ("stance_drift", ("lost stance markers",)),
     ("fact_loss", ("missing required terms", "lost protected facts", "lost exact substrings")),
     ("claim_drift", ("missing required claims", "forbidden assertions appeared")),
-    ("unsupported_invention", ("invented-detail markers", "invented numeric claims")),
+    ("unsupported_invention", (
+        "invented-detail markers",
+        "invented numeric claims",
+        "unsupported entities appeared",
+    )),
     ("uncertainty_drift", ("lost uncertainty marker", "modality drift markers")),
     ("causality_drift", ("causality drift markers",)),
     ("generic_ai_tell", ("generic markers appeared",)),

@@ -56,6 +56,25 @@ GENERIC_MARKERS = [
     "paradigm",
 ]
 
+GENERIC_PATTERNS = [
+    ("at its core", re.compile(r"\bat (?:its|the) core\b", re.IGNORECASE)),
+    (
+        "clear, concise, and actionable",
+        re.compile(r"\bclear,\s*concise,\s*and\s*actionable\b", re.IGNORECASE),
+    ),
+    ("not just X but Y", re.compile(r"\bnot just\b.{0,80}\bbut\b", re.IGNORECASE)),
+    ("designed to help", re.compile(r"\bdesigned to help\b", re.IGNORECASE)),
+    (
+        "move forward with confidence",
+        re.compile(r"\bmove forward with confidence\b", re.IGNORECASE),
+    ),
+    (
+        "focused, practical approach",
+        re.compile(r"\bfocused,\s*practical approach\b", re.IGNORECASE),
+    ),
+    ("created user confusion", re.compile(r"\bcreated user confusion\b", re.IGNORECASE)),
+]
+
 INVENTED_DETAIL_MARKERS = [
     "millions",
     "thousands",
@@ -168,6 +187,9 @@ class Case:
     prompt_mode: str = "explicit_rewrite"
     protected: tuple[str, ...] = field(default_factory=tuple)
     preserve_voice: tuple[str, ...] = field(default_factory=tuple)
+    preserve_stance: tuple[str, ...] = field(default_factory=tuple)
+    forbid_added_entities: bool = False
+    allowed_entities: tuple[str, ...] = field(default_factory=tuple)
 
 
 def words(text: str) -> list[str]:
@@ -237,6 +259,45 @@ def numeric_claims(text: str) -> set[str]:
     }
 
 
+ENTITY_RE = re.compile(r"\b(?:[A-Z][A-Za-z0-9&]*(?:[.-][A-Za-z0-9&]+)*|[A-Z]{2,})\b")
+ENTITY_STOPWORDS = {
+    "AI",
+    "API",
+    "CSV",
+    "DNS",
+    "ID",
+    "MSA",
+    "QA",
+    "ROI",
+    "URL",
+    "UI",
+    "I",
+    "If",
+    "No",
+    "Not",
+    "Please",
+    "Subject",
+    "Thanks",
+    "The",
+    "This",
+    "That",
+    "We",
+    "Legal",
+    "Orders",
+    "Small",
+}
+
+
+def added_entities(source: str, rewrite: str, allowed: tuple[str, ...] = ()) -> list[str]:
+    source_entities = set(ENTITY_RE.findall(source))
+    allowed_entities = source_entities | set(allowed) | ENTITY_STOPWORDS
+    extras: list[str] = []
+    for entity in ENTITY_RE.findall(rewrite):
+        if entity not in allowed_entities and entity not in extras:
+            extras.append(entity)
+    return extras
+
+
 def pad_to_exact_words(text: str, exact: int) -> str:
     """Append neutral words until text reaches an exact word count."""
     filler = "Please name owners clearly before launch today now"
@@ -285,6 +346,12 @@ def validate(case: Case) -> list[str]:
     ]
     if missing_voice:
         errors.append(f"lost voice markers: {missing_voice}")
+
+    missing_stance = [
+        term for term in case.preserve_stance if not contains_term(case.rewrite, term)
+    ]
+    if missing_stance:
+        errors.append(f"lost stance markers: {missing_stance}")
 
     missing_protected = [
         term for term in case.protected if not contains_term(case.rewrite, term)
@@ -348,6 +415,13 @@ def validate(case: Case) -> list[str]:
         for marker in count_markers(case.rewrite, GENERIC_MARKERS)
         if not any(marker in voice.lower() for voice in case.preserve_voice)
     ]
+    generic.extend(
+        label
+        for label, pattern in GENERIC_PATTERNS
+        if pattern.search(case.rewrite)
+        and not pattern.search(case.source)
+        and not any(pattern.search(voice) for voice in case.preserve_voice)
+    )
     if generic:
         errors.append(f"generic markers appeared: {generic}")
 
@@ -360,6 +434,11 @@ def validate(case: Case) -> list[str]:
     invented_numbers = sorted(rewrite_numbers - source_numbers)
     if invented_numbers:
         errors.append(f"invented numeric claims appeared: {invented_numbers}")
+
+    if case.forbid_added_entities:
+        extras = added_entities(case.source, case.rewrite, case.allowed_entities)
+        if extras:
+            errors.append(f"unsupported entities appeared: {extras}")
 
     if any(contains_term(case.source, term) for term in ("maybe", "may", "might", "probably")):
         drift = [
@@ -609,8 +688,17 @@ def make_cases() -> list[Case]:
                 source=source,
                 rewrite=rewrite,
                 must=(admission, phrase, "still disagree"),
-                forbid=("deeply regret", "sincerely apologize", "harm caused"),
+                forbid=(
+                    "deeply regret",
+                    "sincerely apologize",
+                    "harm caused",
+                    "understand the impact",
+                    "holding space",
+                    "moving forward together",
+                    "deeply sorry for the harm",
+                ),
                 preserve_voice=(phrase,),
+                preserve_stance=("still disagree",),
             )
         )
 
@@ -904,6 +992,7 @@ def make_cases() -> list[Case]:
             must=("Friday", "Wednesday", "numbers are not final"),
             forbid=("sorry", "apologize", "happy to"),
             protected=("Friday", "Wednesday"),
+            preserve_stance=("cannot promise Wednesday",),
         ),
         Case(
             id="uncertainty_preservation_01",
@@ -952,6 +1041,7 @@ def make_cases() -> list[Case]:
             must=("migration is delayed", "two imports failed", "one more test"),
             forbid=("excited", "great news", "thrilled"),
             protected=("two imports failed",),
+            preserve_stance=("delayed", "one more test"),
         ),
         Case(
             id="max_words_01",
@@ -1026,11 +1116,12 @@ def make_cases() -> list[Case]:
             required_claims=("Friday will not work", "Monday is realistic"),
             forbid_assertions=("Friday will work", "QA is done"),
             ordered_terms=("Friday", "QA", "Monday"),
-            forbid_artifacts=("vibes",),
+            forbid_artifacts=("i need to tell", "not sound like", "vibes"),
             max_question_marks=0,
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            preserve_stance=("Friday will not work", "Monday is realistic"),
             prompt_mode="source_only",
         ),
         Case(
@@ -1099,6 +1190,7 @@ def make_cases() -> list[Case]:
             forbid=("empower", "unlock", "homepage blob"),
             required_claims=("orders need attention first", "No AI magic", "No command center nonsense"),
             forbid_assertions=("is AI magic", "command center solution"),
+            forbid_added_entities=True,
             allow_expand=True,
             ordered_terms=("small store owners", "orders need attention", "on fire"),
             forbid_artifacts=("homepage blob", "maybe"),
@@ -1175,6 +1267,7 @@ def make_cases() -> list[Case]:
             required_claims=("not adding another tracking pixel", "Legal has not reviewed"),
             forbid_assertions=("are adding another tracking pixel", "Legal has reviewed"),
             ordered_terms=("tracking pixel", "this week", "Legal", "glitter cannon"),
+            preserve_stance=("not adding another tracking pixel",),
             max_question_marks=0,
             forbid_clarifying=True,
             forbid_wrappers=True,
@@ -1319,6 +1412,27 @@ def run_validator_self_tests() -> list[str]:
             "invented numeric claims",
         ),
         (
+            "unsupported entity",
+            Case(
+                "self_entity",
+                "Orders need attention.",
+                "Shopify orders need attention.",
+                must=("orders",),
+                forbid_added_entities=True,
+            ),
+            "unsupported entities appeared",
+        ),
+        (
+            "generic pattern",
+            Case("self_generic_pattern", "A", "At its core, A works.", must=("A",)),
+            "generic markers appeared",
+        ),
+        (
+            "stance marker",
+            Case("self_stance", "No.", "Maybe.", must=("Maybe",), preserve_stance=("No",)),
+            "lost stance markers",
+        ),
+        (
             "max question marks",
             Case("self_max_questions", "A", "Can you clarify?", must=("clarify",), max_question_marks=0),
             "question mark count failed",
@@ -1414,6 +1528,29 @@ def run_negative_fixture_tests() -> list[str]:
             "invented-detail markers appeared",
         ),
         (
+            "invented nonnumeric entity",
+            replace(
+                by_id["thought_dump_product_copy_05"],
+                rewrite=(
+                    "Small store owners can see which Shopify orders need attention "
+                    "first: on fire, less on fire, or actually fine."
+                ),
+                forbid_added_entities=True,
+            ),
+            "unsupported entities appeared",
+        ),
+        (
+            "new ai tell pattern",
+            replace(
+                by_id["corporate_specifics_guard_03"],
+                rewrite=(
+                    "At its core, the workflow gives editors a clear, concise, and "
+                    "actionable way to move forward with confidence."
+                ),
+            ),
+            "generic markers appeared",
+        ),
+        (
             "quoted generic escape",
             replace(
                 by_id["corporate_specifics_guard_02"],
@@ -1485,6 +1622,54 @@ def run_negative_fixture_tests() -> list[str]:
                 ),
             ),
             "note artifacts appeared",
+        ),
+        (
+            "thought dump artifact leak",
+            replace(
+                by_id["thought_dump_email_boundary_02"],
+                rewrite=(
+                    "I need to tell Marco no on the Friday request. Friday will not "
+                    "work because QA still has the build. Monday is realistic."
+                ),
+                forbid_artifacts=("i need to tell",),
+            ),
+            "note artifacts appeared",
+        ),
+        (
+            "second joke injection",
+            replace(
+                by_id["thought_dump_launch_note_01"],
+                rewrite=(
+                    "We fixed the importer bug. People can retry failed rows now, so "
+                    "the launch note should be calm and useful, not a haunted "
+                    "changelog or a spreadsheet thunderstorm."
+                ),
+                forbid=("spreadsheet thunderstorm",),
+            ),
+            "forbidden terms appeared",
+        ),
+        (
+            "therapy speak apology",
+            replace(
+                by_id["apology_light_touch_01"],
+                rewrite=(
+                    "Hey, I understand the impact of how I came in too hot. I am "
+                    "holding space for repair and moving forward together."
+                ),
+                forbid=("understand the impact", "holding space", "moving forward together"),
+            ),
+            "forbidden terms appeared",
+        ),
+        (
+            "voice marker sticker",
+            replace(
+                by_id["thought_dump_founder_note_09"],
+                rewrite=(
+                    "We are still small on purpose. The floorboards squeak. Customers "
+                    "benefit from a focused, practical approach."
+                ),
+            ),
+            "generic markers appeared",
         ),
         (
             "thought dump order",
@@ -1890,6 +2075,91 @@ def run_reader_action_contract_tests() -> list[str]:
     return failures
 
 
+def run_voice_texture_contract_tests() -> list[str]:
+    """Catch over-sanitizing that removes identity, plain words, or the best line."""
+    checks = [
+        (
+            "intentional nonstandard grammar kept",
+            Case(
+                id="voice_texture_nonstandard_kept",
+                source=(
+                    "y'all, this ain't the launch note. it is a beige apology wearing "
+                    "a lanyard. fix the structure, not the voice."
+                ),
+                rewrite=(
+                    "Y'all, this ain't the launch note. It is a beige apology wearing "
+                    "a lanyard. Fix the structure, not the voice."
+                ),
+                must=("launch note", "fix the structure"),
+                preserve_voice=("Y'all", "ain't", "beige apology wearing a lanyard"),
+                forbid=("you all", "is not", "professional announcement"),
+            ),
+            None,
+        ),
+        (
+            "intentional nonstandard grammar flattened",
+            Case(
+                id="voice_texture_nonstandard_flattened",
+                source=(
+                    "y'all, this ain't the launch note. it is a beige apology wearing "
+                    "a lanyard. fix the structure, not the voice."
+                ),
+                rewrite=(
+                    "You all, this is not a professional launch note. The structure "
+                    "should be improved."
+                ),
+                must=("launch note", "structure"),
+                preserve_voice=("y'all", "ain't", "beige apology wearing a lanyard"),
+                forbid=("you all", "professional launch note"),
+            ),
+            "lost voice markers",
+        ),
+        (
+            "plain words kept",
+            Case(
+                id="voice_texture_plain_words_kept",
+                source=(
+                    "this broke because the button lied. say that cleaner but do not "
+                    "turn it into interface soup."
+                ),
+                rewrite=(
+                    "This broke because the button lied. Say that cleaner without "
+                    "turning it into interface soup."
+                ),
+                must=("button lied", "interface soup"),
+                preserve_voice=("button lied", "interface soup"),
+                forbid=("created user confusion", "interface created user confusion"),
+            ),
+            None,
+        ),
+        (
+            "plain words abstracted away",
+            Case(
+                id="voice_texture_plain_words_flattened",
+                source=(
+                    "this broke because the button lied. say that cleaner but do not "
+                    "turn it into interface soup."
+                ),
+                rewrite=(
+                    "The interface created user confusion and requires a more focused, "
+                    "practical approach."
+                ),
+                must=("button lied",),
+                preserve_voice=("button lied", "interface soup"),
+            ),
+            "missing required terms",
+        ),
+    ]
+    failures: list[str] = []
+    for name, case, expected in checks:
+        errors = validate(case)
+        if expected is None and errors:
+            failures.append(f"{name}: expected pass, got {errors}")
+        elif expected is not None and not any(expected in error for error in errors):
+            failures.append(f"{name}: expected {expected}, got {errors}")
+    return failures
+
+
 def run_mutation_tests() -> list[str]:
     """Mutate every good fixture in common bad-output ways and require failure."""
     failures: list[str] = []
@@ -2009,6 +2279,7 @@ def main() -> int:
     profile_test_failures = run_profile_contract_tests()
     mixed_stance_test_failures = run_mixed_stance_contract_tests()
     reader_action_test_failures = run_reader_action_contract_tests()
+    voice_texture_test_failures = run_voice_texture_contract_tests()
     mutation_test_failures = run_mutation_tests()
     if (
         self_test_failures
@@ -2016,6 +2287,7 @@ def main() -> int:
         or profile_test_failures
         or mixed_stance_test_failures
         or reader_action_test_failures
+        or voice_texture_test_failures
         or mutation_test_failures
     ):
         print("VALIDATOR SELF-TESTS: FAIL")
@@ -2025,6 +2297,7 @@ def main() -> int:
             + profile_test_failures
             + mixed_stance_test_failures
             + reader_action_test_failures
+            + voice_texture_test_failures
             + mutation_test_failures
         ):
             print(f"  - {failure}")

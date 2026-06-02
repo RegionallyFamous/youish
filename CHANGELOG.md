@@ -4,6 +4,16 @@
 
 Nothing yet.
 
+## 0.2.3 - 2026-06-02
+
+- Make the Codex plugin marketplace path installable by adding a `plugins/dittobot` package mirror and validating it.
+- Strengthen regression coverage for unsupported entities, generic AI patterns, stance preservation, artifact leaks, over-formalizing, extra jokes, therapy-speak, dialect preservation, and plain-word flattening.
+- Add new public scorecard guardrails for stance preservation, artifact cleanup, unsupported entity protection, and anti-generic polish.
+- Make copied install checks tolerate GitHub CLI source metadata without ignoring the actual skill body.
+- Harden release builds by building assets in a verified temporary directory before replacing the final `dist/release-vX.Y.Z` folder.
+- Harden the one-line installer against unsafe custom archive paths, symlinks, and hardlinks.
+- Tighten README persuasion with clearer proof, limits, skeptic-facing framing, and annotated research takeaways.
+
 ## 0.2.2 - 2026-06-02
 
 - Let installed-copy validation tolerate GitHub CLI source-tracking metadata while keeping source repo frontmatter strict.

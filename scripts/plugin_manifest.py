@@ -7,8 +7,8 @@ import re
 
 
 PLUGIN_NAME = "dittobot"
-DEFAULT_VERSION = "0.2.2"
-PLUGIN_DESCRIPTION = "Voice-faithful rewrites for people who want AI to sound like them."
+DEFAULT_VERSION = "0.2.3"
+PLUGIN_DESCRIPTION = "Voice-faithful rewrites that keep your claims, stance, and rhythm."
 SEMVER_RE = re.compile(
     r"^(0|[1-9]\d*)\."
     r"(0|[1-9]\d*)\."
@@ -43,8 +43,8 @@ def manifest(version: str) -> dict:
             "shortDescription": "Voice-faithful rewrites without factual drift.",
             "longDescription": (
                 "Dittobot rewrites messy drafts, notes, emails, and posts while "
-                "preserving the user's voice, facts, stance, rhythm, humor, and "
-                "constraints."
+                "preserving the user's claims, stance, uncertainty, rhythm, "
+                "distinctive phrases, reader action, and constraints."
             ),
             "developerName": "Regionally Famous",
             "category": "Productivity",
@@ -52,7 +52,7 @@ def manifest(version: str) -> dict:
                 "Voice-preserving rewrites",
                 "Messy-note cleanup",
                 "Fact and claim protection",
-                "Local regression tooling",
+                "Refuses unsupported details",
             ],
             "websiteURL": "https://github.com/RegionallyFamous/dittobot",
             "privacyPolicyURL": "https://github.com/RegionallyFamous/dittobot/blob/main/SECURITY.md",
