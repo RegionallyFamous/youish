@@ -2,6 +2,8 @@
 
 Voice-faithful rewrites for people who want AI to sound like them, not like a committee laminated a thesaurus.
 
+The name is a playful nod to Ditto from Pokemon: the whole trick is transformation without losing the original shape. Also, "ditto" is a perfectly normal English word, so please do not sue me, Nintendo. Dittobot is unofficial and unaffiliated, just a wink from one weird little tool to another.
+
 ## Why This Exists
 
 The answer is not "never use AI." The answer is "teach the tool your voice."
