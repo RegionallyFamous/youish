@@ -7,13 +7,19 @@ description: Rewrite, edit, tighten, punch up, or diagnose user-provided prose w
 
 ## Core Rule
 
-Rewrite like a sharp editor with restraint. Preserve the writer first, improve the writing second, and add delight third. The target is not generic polish; it is the user on a very good writing day.
+Rewrite like a sharp editor with restraint. Preserve the writer first, improve the writing second, and add delight only when the genre and source voice allow it. The target is not generic polish; it is the user on a very good writing day.
 
 Never make writing worse to hide AI use. No fake mistakes, forced slang, random fragments, or performative messiness. Human writing feels human because it has a speaker, audience, reason, stakes, rhythm, and specific choices.
 
+Do not launder the user's emotional stance. Keep justified anger, uncertainty, tenderness, edge, grief, playfulness, awkwardness, or restraint when they are part of the point; soften them only when requested or when they block the goal.
+
 ## Fast Defaults
 
-Use the lightest edit that satisfies the request. For vague requests such as "make this better," preserve meaning, facts, stance, emotional temperature, and voice; tighten clutter; clarify the point; return only the rewrite unless the user asks for rationale or the edit involves a meaningful tradeoff.
+Use the lightest edit that satisfies the request. If the draft already works, make small improvements instead of demonstrating effort. Do not rewrite strong sentences merely to justify the skill.
+
+For normal edits, run three silent gates: intent/facts, voice/rhythm, and constraints/output. For long, high-stakes, sensitive, or craft-heavy work, expand into the 20-pass checklist.
+
+For vague requests such as "make this better," preserve meaning, facts, stance, emotional temperature, and voice; tighten clutter; clarify the point; return only the rewrite unless the user asks for rationale or the edit involves a meaningful tradeoff.
 
 Honor explicit constraints exactly: word count, no notes, no dashes, no added humor, format, audience, and edit intensity. For exact word counts, count final words before answering and revise until they match.
 
@@ -25,10 +31,14 @@ Before rewriting, identify:
 
 - **Task:** proofread, light edit, tighten, rewrite, punch up, compress, expand, adapt tone, diagnose, or provide options.
 - **Audience and purpose:** who reads it and what the text needs to do.
-- **Voice fingerprint:** directness, formality, humor, sentence length, punctuation, vocabulary, confidence, warmth, weirdness, and favorite phrases.
+- **Voice fingerprint:** directness, formality, humor, sentence length, punctuation, vocabulary, confidence, warmth, texture, idiosyncrasy, and favorite phrases.
 - **Protected material:** facts, claims, names, dates, commitments, quotes, jokes, emotional beats, technical terms, and phrases that feel like the user.
 
 Keep three private ledgers while editing: constraints to obey, claims/facts not to change, and voice markers to preserve. Do not show these ledgers unless the user asks.
+
+Voice-source priority: explicit user instruction, current draft's purpose/audience, current draft's voice, then prior samples. Never overfit an old sample against the needs of the present piece.
+
+Preserve the user's format, paragraphing, line breaks, headings, bullets, subject lines, greetings, and signoffs unless changing them clearly improves the requested outcome.
 
 Use prior writing samples when available. Otherwise use the submitted draft. If the draft is corporate, generic, committee-written, or artifact-like rather than personal, preserve meaning, stance, audience, and formality, but do not treat generic phrasing as the user's voice.
 
@@ -41,13 +51,15 @@ Use prior writing samples when available. Otherwise use the submitted draft. If 
 - **Punch up:** add energy from existing stakes, contrast, or phrasing; add wit only when requested or clearly present.
 - **Compress:** make it materially shorter without losing the point.
 - **Options:** provide 2-3 labeled versions when tone is subjective.
+- **Voice profile:** infer a compact reusable profile from samples: do/avoid, rhythm, diction, punctuation, humor, stance, protected quirks, and forbidden generic moves.
+- **Comparison:** when asked, show what changed and why in a short before/after or notes format.
 - **Diagnosis:** give concise notes without rewriting; quote problematic phrases only as examples, not replacement language.
 
 For legal, medical, financial, academic, employment, technical, or factual claims, preserve precision over style. Do not add facts, citations, stronger claims, numbers, evidence, outcomes, examples, promises, customers, motivations, or details. Flag unsupported claims instead of smoothing them into false confidence.
 
-## 20-Pass Loop
+## Quality Gates And 20-Pass Checklist
 
-Run this loop silently. For very short text, each pass can be a quick mental sweep. Between every pass, apply this gate:
+Use this checklist silently when the work warrants it. For very short text, each pass can be a quick mental sweep. Between every pass, apply this gate:
 
 ```text
 Did this preserve intent, voice, facts, stance, and desired length?
@@ -80,6 +92,8 @@ If not, revert or soften the change.
 
 Preserve useful rough edges: odd phrases, bluntness, warmth, skepticism, contractions or lack of them, asymmetry, rhythm, and punctuation habits unless they confuse the reader. Remove fog, not fingerprints.
 
+Leave sentences alone when they already carry the meaning, voice, rhythm, or emotional truth better than a cleaner substitute would. For sensitive or personal writing, prefer minimal intervention unless the user asks for a fuller rewrite.
+
 Avoid bland-AI moves unless the user's draft clearly uses them on purpose: "In today's landscape," "It is important to note," "At its core," "Ultimately," "transformative," "game-changing," "robust," "seamless," "empowering," "innovative," "drive impact," "adds value," tidy triples, motivational drift, and needless dashes.
 
 Do not mechanically delete every dash, triad, or transition. Fix the reason the text feels generic, not just the visible marker. When the source supports it, replace generic language with the actual claim, action, consequence, or feeling. When it does not, keep the claim modest, use a placeholder, ask for specifics, or add one short note that the draft needs real details.
@@ -88,7 +102,7 @@ Do not mechanically delete every dash, triad, or transition. Fix the reason the 
 
 Put the useful thing first.
 
-- Normal rewrite: `**Rewrite**` followed by the revised text.
+- Normal rewrite: return the revised text directly, or use `**Rewrite**` when a label helps readability.
 - Meaningful tradeoff or requested rationale: add `**Note**` with one short explanation.
 - Tone options: provide 2-3 labeled versions such as `Cleaner`, `Warmer`, or `Sharper`.
 - Feedback-only: lead with the highest-impact notes and do not rewrite.

@@ -41,10 +41,14 @@ GENERIC_MARKERS = [
     "operational excellence",
     "meaningful impact",
     "full potential",
+    "industry-leading",
+    "backed by research",
+    "research-backed",
 ]
 
 INVENTED_DETAIL_MARKERS = [
     "millions",
+    "thousands",
     "fortune 500",
     "revenue",
     "market share",
@@ -54,12 +58,40 @@ INVENTED_DETAIL_MARKERS = [
     "guaranteed",
     "proven",
     "98%",
+    "97%",
+    "97 percent",
+    "certified",
+    "used by",
+    "trusted by",
+    "global brands",
 ]
 
 NOTE_MARKERS = [
     r"(?im)^\*\*what changed\*\*",
     r"(?im)^\*\*note\*\*",
     r"(?im)^note:",
+    r"(?im)^sure[:,]",
+    r"(?im)^here'?s\b",
+    r"(?im)^cleaner version:",
+    r"(?im)^i (tightened|changed|kept|made)\b",
+]
+
+MODALITY_DRIFT_MARKERS = [
+    "must",
+    "definitely",
+    "certainly",
+    "guaranteed",
+    "proven",
+    "will happen",
+]
+
+CAUSALITY_DRIFT_MARKERS = [
+    "root cause",
+    "caused by",
+    "due to the database",
+    "latency",
+    "database",
+    "user error",
 ]
 
 
@@ -76,6 +108,7 @@ class Case:
     max_ratio: float = 1.35
     no_dash: bool = False
     diagnosis: bool = False
+    protected: tuple[str, ...] = field(default_factory=tuple)
     preserve_voice: tuple[str, ...] = field(default_factory=tuple)
 
 
@@ -89,6 +122,14 @@ def strip_quoted(text: str) -> str:
     text = re.sub(r"'[^']*'", "", text)
     text = re.sub(r"\u201c[^\u201d]*\u201d", "", text)
     return text
+
+
+def normalized(text: str) -> str:
+    return " ".join(words(text.lower()))
+
+
+def contains_term(text: str, term: str) -> bool:
+    return normalized(term) in normalized(text)
 
 
 def has_note(text: str) -> bool:
@@ -114,20 +155,26 @@ def pad_to_exact_words(text: str, exact: int) -> str:
 
 def validate(case: Case) -> list[str]:
     errors: list[str] = []
-    rewrite_lower = case.rewrite.lower()
-    unquoted_lower = strip_quoted(case.rewrite).lower()
+    unquoted = strip_quoted(case.rewrite)
+    unquoted_lower = unquoted.lower()
 
-    missing = [term for term in case.must if term.lower() not in rewrite_lower]
+    missing = [term for term in case.must if not contains_term(case.rewrite, term)]
     if missing:
         errors.append(f"missing required terms: {missing}")
 
     missing_voice = [
-        term for term in case.preserve_voice if term.lower() not in rewrite_lower
+        term for term in case.preserve_voice if not contains_term(case.rewrite, term)
     ]
     if missing_voice:
         errors.append(f"lost voice markers: {missing_voice}")
 
-    forbidden = [term for term in case.forbid if term.lower() in unquoted_lower]
+    missing_protected = [
+        term for term in case.protected if not contains_term(case.rewrite, term)
+    ]
+    if missing_protected:
+        errors.append(f"lost protected facts: {missing_protected}")
+
+    forbidden = [term for term in case.forbid if contains_term(unquoted, term)]
     if forbidden:
         errors.append(f"forbidden terms appeared: {forbidden}")
 
@@ -143,10 +190,27 @@ def validate(case: Case) -> list[str]:
     if invented:
         errors.append(f"invented-detail markers appeared: {invented}")
 
+    if any(contains_term(case.source, term) for term in ("maybe", "may", "might", "probably")):
+        drift = [
+            term
+            for term in MODALITY_DRIFT_MARKERS
+            if contains_term(unquoted, term) and not contains_term(case.source, term)
+        ]
+        if drift:
+            errors.append(f"modality drift markers appeared: {drift}")
+
+    causal_drift = [
+        term
+        for term in CAUSALITY_DRIFT_MARKERS
+        if contains_term(unquoted, term) and not contains_term(case.source, term)
+    ]
+    if causal_drift:
+        errors.append(f"causality drift markers appeared: {causal_drift}")
+
     if has_note(case.rewrite) and not case.allow_note:
         errors.append("unexpected note/rationale")
 
-    if case.no_dash and ("\u2014" in case.rewrite or "\u2013" in case.rewrite):
+    if case.no_dash and any(mark in case.rewrite for mark in ("-", "\u2010", "\u2011", "\u2012", "\u2013", "\u2014", "\u2212")):
         errors.append("dash constraint violated")
 
     source_words = len(words(case.source))
@@ -271,6 +335,7 @@ def make_cases() -> list[Case]:
                 source=source,
                 rewrite=rewrite,
                 must=(deadline, company, "may need", "not counsel", "Legal"),
+                protected=(deadline, company, doc),
                 forbid=("must send", "required to send", "definitely true"),
             )
         )
@@ -340,6 +405,7 @@ def make_cases() -> list[Case]:
                 source=source,
                 rewrite=rewrite,
                 must=(meeting, old, new, "not ready"),
+                protected=(meeting, old, new),
                 forbid=("potentially", "possibility", "reach out"),
             )
         )
@@ -408,6 +474,7 @@ def make_cases() -> list[Case]:
                 source=source,
                 rewrite=rewrite,
                 must=(event, stale, accepted),
+                protected=(event, stale, accepted),
                 forbid=("root cause", "latency", "database"),
             )
         )
@@ -480,7 +547,7 @@ def make_cases() -> list[Case]:
         )
 
     constraint_items = [
-        ("30", 30, "screenshots, legal-note approval, and pricing copy"),
+        ("30", 30, "screenshots, legal note approval, and pricing copy"),
         ("28", 28, "owner, deadline, and launch note"),
         ("26", 26, "QA list, demo link, and support copy"),
         ("24", 24, "redirects, DNS owner, and timing"),
@@ -492,7 +559,7 @@ def make_cases() -> list[Case]:
         ("12", 12, "final copy"),
     ]
     constraint_rewrites = {
-        30: "The launch is not blocked by content. It is blocked by three missing items: screenshots, legal-note approval, and pricing copy. I can help once owners are clearly named.",
+        30: "The launch is not blocked by content. It is blocked by three missing items: screenshots, legal note approval, and pricing copy. I can help once owners are clearly named.",
         28: "The launch is blocked by three missing items: owner, deadline, and launch note. I can help once someone names who owns each one.",
         26: "This is blocked by the QA list, demo link, and support copy. I can help once each item has a named owner.",
         24: "This is blocked by redirects, DNS owner, and timing. Name the owners and I can help move it forward.",
@@ -514,7 +581,10 @@ def make_cases() -> list[Case]:
                 id=f"constraint_exact_words_{idx:02d}",
                 source=source,
                 rewrite=rewrite,
-                must=tuple(part.strip() for part in items.split(","))[:1],
+                must=tuple(
+                    part.strip().removeprefix("and ").strip()
+                    for part in items.split(",")
+                ),
                 exact_words=exact,
                 no_dash=True,
                 forbid=("stakeholders", "alignment"),
@@ -525,7 +595,66 @@ def make_cases() -> list[Case]:
     return cases
 
 
+def run_validator_self_tests() -> list[str]:
+    checks = [
+        (
+            "missing required",
+            Case("self_missing", "A", "B", must=("A",)),
+            "missing required terms",
+        ),
+        (
+            "forbidden",
+            Case("self_forbid", "A", "A robust platform", must=("A",)),
+            "generic markers appeared",
+        ),
+        (
+            "invented detail",
+            Case("self_invented", "A", "A used by thousands", must=("A",)),
+            "invented-detail markers appeared",
+        ),
+        (
+            "unexpected note",
+            Case("self_note", "A", "Note: I changed this.\nA", must=("A",)),
+            "unexpected note",
+        ),
+        (
+            "dash",
+            Case("self_dash", "A", "A - B", must=("A",), no_dash=True),
+            "dash constraint violated",
+        ),
+        (
+            "exact words",
+            Case("self_words", "A", "A B", must=("A",), exact_words=3),
+            "exact word count failed",
+        ),
+        (
+            "protected",
+            Case("self_protected", "Meet Friday", "Meet soon", must=("Meet",), protected=("Friday",)),
+            "lost protected facts",
+        ),
+        (
+            "modality drift",
+            Case("self_modality", "This may apply", "This definitely applies", must=("applies",)),
+            "modality drift markers appeared",
+        ),
+    ]
+    failures: list[str] = []
+    for name, case, expected in checks:
+        errors = validate(case)
+        if not any(expected in error for error in errors):
+            failures.append(f"{name}: expected {expected}, got {errors}")
+    return failures
+
+
 def main() -> int:
+    self_test_failures = run_validator_self_tests()
+    if self_test_failures:
+        print("VALIDATOR SELF-TESTS: FAIL")
+        for failure in self_test_failures:
+            print(f"  - {failure}")
+        return 1
+    print("VALIDATOR SELF-TESTS: PASS")
+
     cases = make_cases()
     failures: list[tuple[Case, list[str]]] = []
 
