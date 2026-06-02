@@ -49,6 +49,12 @@ body:
     attributes:
       label: Suggested validators
       description: Required terms, protected facts, forbidden terms, voice markers, prompt mode, word count, format constraints, etc.
+  - type: textarea
+    id: profile_boundary
+    attributes:
+      label: Reusable profile guidance
+      description: Should this become reusable profile guidance? When should this voice or habit not apply?
+      placeholder: Example: This dry phrasing is good for internal Slack, but should be disabled for sensitive customer-facing text.
   - type: checkboxes
     id: privacy
     attributes:

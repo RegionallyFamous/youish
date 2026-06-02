@@ -8,6 +8,9 @@ Dittobot releases should be boring, tagged, and validated.
 ```bash
 python3 scripts/validate_skill.py
 python3 scripts/regression_100.py
+python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
+python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
+python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing."
 python3 -m py_compile scripts/*.py
 python3 scripts/check_install.py
 ```
@@ -23,7 +26,8 @@ python3 scripts/live_eval.py --print-prompts --prompt-mode source_only --limit 2
 
 ```bash
 python3 scripts/live_eval.py --prompt-mode source_only --limit 5
-python3 scripts/live_eval.py --limit 10
+python3 scripts/live_eval.py --limit 10 --save-jsonl live-eval-results.local.jsonl
+python3 scripts/live_report.py live-eval-results.local.jsonl
 ```
 
 5. Commit, push, and wait for GitHub Actions to pass.

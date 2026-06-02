@@ -41,11 +41,12 @@ Prefer one sharp case over ten vague cases.
 Use the lab scripts when a failure is hard to reason about:
 
 ```bash
-python3 scripts/audit.py --source-file source.txt --rewrite-file rewrite.txt --protected "real date" --voice "dry little joke"
-python3 scripts/case_lab.py --case-id new_case_01 --source-file source.txt --rewrite-file desired.txt --protected "real date" --voice "dry little joke"
+python3 scripts/voice_probe.py samples/*.local.md
+python3 scripts/audit.py --source-file source.txt --rewrite-file rewrite.txt --ledger-file profile.local.json
+python3 scripts/case_lab.py --case-id new_case_01 --source-file source.txt --rewrite-file desired.txt --ledger-file profile.local.json
 ```
 
-`audit.py` tells you which guardrails catch the bad output. `case_lab.py` prints a `Case(...)` skeleton you can review, redact, and paste into the harness.
+`voice_probe.py` extracts observable style signals from local samples. `audit.py` tells you which guardrails catch the bad output. `case_lab.py` prints a `Case(...)` skeleton you can review, redact, and paste into the harness.
 
 ## Validation
 
@@ -56,6 +57,7 @@ python3 scripts/validate_skill.py
 python3 scripts/regression_100.py
 python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
 python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
+python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing."
 python3 -m py_compile scripts/*.py
 ```
 
@@ -67,3 +69,4 @@ python3 scripts/live_eval.py --prompt-mode source_only --limit 5
 ```
 
 Do not commit `*.local.jsonl` transcripts.
+Do not commit local profile cards, sample files, or ledgers; use `*.local.md` or `*.local.json`.

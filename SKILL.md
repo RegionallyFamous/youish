@@ -40,6 +40,10 @@ Keep three private ledgers while editing: constraints to obey, claims/facts not 
 
 Voice-source priority: explicit user instruction, current draft's purpose/audience, current draft's voice, then prior samples. Never overfit an old sample against the needs of the present piece.
 
+Voice profiles transfer editing taste, not old facts. Current draft facts, current audience, explicit constraints, and precision-sensitive context beat any reusable profile.
+
+If the user includes lightweight fences such as `[[keep: ...]]`, `[[claim: ...]]`, `[[voice: ...]]`, `[[avoid: ...]]`, or `[[boundary: ...]]`, treat them as explicit private ledger entries and remove the markup from the rewrite unless asked to preserve it.
+
 Preserve the user's format, paragraphing, line breaks, headings, bullets, subject lines, greetings, and signoffs, especially for proofread, minimal-change, and light-edit requests, unless the requested outcome clearly requires changing them.
 
 Use prior writing samples when available. Otherwise use the submitted draft. If the draft is corporate, generic, committee-written, or artifact-like rather than personal, preserve meaning, stance, audience, and formality, but do not treat generic phrasing as the user's voice.
@@ -128,3 +132,5 @@ python3 scripts/regression_100.py
 ```
 
 For ad hoc rewrite audits or regression-case scaffolds, use `scripts/audit.py` and `scripts/case_lab.py` without loading their code into normal writing tasks.
+
+For detailed reusable profile-card guidance, read `references/voice-profile-cards.md` only when the user asks for profile work. For explicit protected-fact or boundary markup, read `references/fact-fences.md` only when the user uses fences or asks for that workflow.

@@ -64,7 +64,8 @@ It:
 - uses fast editorial gates by default and expands into a 20-pass checklist for hard work;
 - includes a deterministic 100-case fixture harness plus an optional live model smoke test;
 - ships a local rewrite audit tool for checking arbitrary source/rewrite pairs without calling a model;
-- includes a case lab for turning real bad rewrites into focused regression fixtures.
+- includes a case lab for turning real bad rewrites into focused regression fixtures;
+- supports compact reusable voice profile cards, fact fences, and local voice probes.
 
 Dittobot is not a ghostwriter. It is a voice-preserving editor. The goal is not "sounds professional." The goal is "sounds like you on a very good writing day."
 
@@ -124,7 +125,7 @@ Install it into your Codex skills folder:
 python3 scripts/install.py
 ```
 
-The installer backs up an existing `~/.codex/skills/dittobot`, creates a symlink by default, and runs the install verifier. Use `--copy` if you cannot or do not want to symlink:
+The installer backs up an existing `~/.codex/skills/dittobot`, creates a symlink by default, and runs the install verifier. Use `--copy` if you cannot or do not want to symlink; copy installs include only the installable skill package files:
 
 ```bash
 python3 scripts/install.py --copy
@@ -140,16 +141,15 @@ fi
 ln -s "$(pwd)" ~/.codex/skills/dittobot
 ```
 
-Symlinks are preferred because they prevent drift. If you need a copy, use `rsync` so updates replace stale files:
+Symlinks are preferred because they prevent drift. If you need a copy, rerun the installer so stale package files are replaced cleanly:
 
 ```bash
-mkdir -p ~/.codex/skills/dittobot
-rsync -a --delete ./ ~/.codex/skills/dittobot/
+python3 scripts/install.py --copy
 ```
 
 Then invoke it as `$dittobot`.
 
-What gets installed: `SKILL.md`, `agents/openai.yaml`, and helper scripts for validation, installation, ad hoc rewrite audits, regression-case scaffolding, and optional live eval. Normal Dittobot use does not run or load the scripts.
+What gets installed: `SKILL.md`, `agents/openai.yaml`, optional references, and helper scripts for validation, installation, ad hoc rewrite audits, regression-case scaffolding, voice probing, live reporting, and optional live eval. Normal Dittobot use does not run or load the scripts or references.
 
 Check that your installed skill still matches the repo:
 
@@ -243,6 +243,7 @@ python3 scripts/validate_skill.py
 python3 scripts/regression_100.py
 python3 scripts/audit.py --source "I think notice may be due in 10 days." --rewrite "I think notice may be due in 10 days." --preserve-uncertainty --protected "10 days"
 python3 scripts/case_lab.py --case-id sample_case_01 --source "rough but redacted source" --rewrite "clean but still redacted rewrite" --must "redacted"
+python3 scripts/voice_probe.py --sample "This draft is not bad. It just apologizes for existing."
 python3 -m py_compile scripts/*.py
 tmpdir="$(mktemp -d)"
 mkdir -p "$tmpdir/codex-skills"
@@ -259,6 +260,7 @@ VALIDATOR SELF-TESTS: PASS
 TOTAL: 100/100 passed
 PASS | source_words=9 rewrite_words=9
 # Review before committing: keep fixtures redacted and focused.
+# Voice Probe
 Installed skill matches repo (symlink): ...
 Installed symlink: ...
 ```
@@ -269,14 +271,57 @@ This validates the fixtures, the validator itself, mutation checks against bad o
 
 Dittobot is intentionally small in normal use, but the repo ships a little lab bench for people who want to prove the editor is behaving.
 
+Probe local writing samples for observable voice signals without calling a model:
+
+```bash
+python3 scripts/voice_probe.py samples/*.local.md
+```
+
+Use those signals to build a compact profile card:
+
+```md
+## Use
+- Plain words, dry contrast, and short useful openings.
+
+## Avoid
+- Corporate fog, tidy triples, forced cheer, and "professional" filler.
+
+## Rhythm/Diction
+- Mostly short sentences with the occasional sideways image.
+
+## Protected quirks
+- Keep the weird little joke when it carries the point.
+
+## Evidence phrases
+- "haunted changelog"
+- "walks into the room and apologizes for existing"
+
+## When not to apply
+- Legal, medical, financial, crisis, or customer-facing precision work.
+
+## Editing rules
+- Tighten hard, but do not sand off the speaker.
+```
+
+Profiles transfer taste, not old facts. Current draft facts, current audience, and explicit constraints win.
+
+Use fact fences when a draft has material that must survive:
+
+```text
+[[keep: Acme, 10 business days, not counsel]]
+[[claim: may need to send notice]]
+[[voice: haunted changelog]]
+[[avoid: Legal has approved, robust, seamless]]
+[[boundary: casual Slack voice does not apply to the customer notice]]
+```
+
 Audit any source/rewrite pair without calling a model:
 
 ```bash
 python3 scripts/audit.py \
-  --source "I think notice may be due in 10 days." \
+  --source "[[keep: 10 days]] [[claim: may be due]] I think notice may be due in 10 days." \
   --rewrite "Notice is due in 10 days." \
-  --preserve-uncertainty \
-  --protected "10 days"
+  --preserve-uncertainty
 ```
 
 Turn a real, redacted bad rewrite into a fixture skeleton:
@@ -303,6 +348,7 @@ python3 scripts/live_eval.py --list-cases --prompt-mode source_only
 python3 scripts/live_eval.py --print-prompts --prompt-mode source_only --limit 2
 python3 scripts/live_eval.py --case legal_precision_01 --model "$OPENAI_MODEL"
 python3 scripts/live_eval.py --limit 20 --model gpt-5-mini --fail-fast --show-output-on-fail --max-total-tokens 50000 --save-jsonl live-eval-results.local.jsonl
+python3 scripts/live_report.py live-eval-results.local.jsonl --fail-under 0.95
 ```
 
 Use `--limit`, `--case`, `--prompt-mode source_only`, `--ensure-source-only`, `--fail-fast`, `--max-failures`, or `--max-total-tokens` to keep cost bounded and target the messy-default path. `--list-cases` and `--print-prompts` do not call the API. If `OPENAI_API_KEY` is not set, the live eval skips cleanly. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored. They store hashes by default; add `--save-raw-source` or `--save-raw-output` only when the text is safe to keep locally.
@@ -311,7 +357,7 @@ Custom API URLs are blocked unless you pass `--allow-custom-api-url`; do that on
 
 ## Privacy
 
-Voice samples are personal. Dittobot does not require storing them in this repo. If you create local voice profiles or live-eval transcripts, keep them out of git unless every person represented in the samples is comfortable with publication.
+Voice samples are personal. Dittobot does not require storing them in this repo. If you create local voice profiles, ledger files, sample files, or live-eval transcripts, prefer `*.local.md`, `*.local.json`, or `*.local.jsonl` so git ignores them. Do not publish anyone's samples unless every person represented in them is comfortable with publication.
 
 ## Contributing
 

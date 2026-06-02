@@ -11,6 +11,10 @@ import sys
 import time
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from package_files import PACKAGE_FILES
+
 
 def backup_path(target: Path) -> Path:
     return target.with_name(f"{target.name}.backup.{int(time.time())}")
@@ -21,17 +25,12 @@ def is_repo_symlink(target: Path, repo: Path) -> bool:
 
 
 def install_copy(repo: Path, target: Path) -> None:
-    shutil.copytree(
-        repo,
-        target,
-        ignore=shutil.ignore_patterns(
-            ".git",
-            "__pycache__",
-            "*.pyc",
-            "*.local.jsonl",
-            ".DS_Store",
-        ),
-    )
+    target.mkdir(parents=True, exist_ok=True)
+    for rel in PACKAGE_FILES:
+        source = repo / rel
+        destination = target / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
 
 
 def main() -> int:

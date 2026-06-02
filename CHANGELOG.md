@@ -5,6 +5,10 @@
 - Add portable repo validation and GitHub Actions checks.
 - Add `scripts/audit.py` for model-free audits of arbitrary source/rewrite pairs.
 - Add `scripts/case_lab.py` to turn redacted rewrite failures into regression-case skeletons.
+- Add `scripts/voice_probe.py` for local, model-free voice-signal extraction from writing samples.
+- Add `scripts/live_report.py` for summarizing local live-eval transcripts by model, prompt mode, family, error type, and usage.
+- Add reusable fact-fence and voice-profile-card references.
+- Add package-file manifest sharing between install drift checks and repo validation.
 - Add optional live model smoke testing with safer API URL and transcript handling.
 - Make live eval reporting track attempted, passed, not-run, and usage totals instead of counting stopped cases as passes.
 - Make live-eval saved transcripts hash-only by default, with explicit raw source/output opt-ins.

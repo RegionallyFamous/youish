@@ -101,6 +101,10 @@ def user_prompt(case: Case) -> str:
     return "\n".join(lines)
 
 
+def case_family(case_id: str) -> str:
+    return re.sub(r"_\d+$", "", case_id)
+
+
 def call_responses_api(
     *,
     api_key: str,
@@ -203,7 +207,7 @@ def representative_cases(cases: list[Case], limit: int, ensure_source_only: int 
 def print_case_list(cases: list[Case]) -> None:
     for case in cases:
         print(
-            f"{case.id}\t{case.prompt_mode}\t"
+            f"{case.id}\t{case_family(case.id)}\t{case.prompt_mode}\t"
             f"source_words={len(words(case.source))}\trewrite_words={len(words(case.rewrite))}"
         )
 
@@ -428,6 +432,7 @@ def main() -> int:
             if save_file:
                 record = {
                     "case": case.id,
+                    "family": case_family(case.id),
                     "prompt_mode": case.prompt_mode,
                     "model": args.model,
                     "timestamp": datetime.now(timezone.utc).isoformat(),

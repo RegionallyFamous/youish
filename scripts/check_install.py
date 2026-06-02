@@ -6,20 +6,12 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-FILES = (
-    "SKILL.md",
-    "agents/openai.yaml",
-    "scripts/audit.py",
-    "scripts/case_lab.py",
-    "scripts/regression_100.py",
-    "scripts/check_install.py",
-    "scripts/install.py",
-    "scripts/live_eval.py",
-    "scripts/validate_skill.py",
-)
+from package_files import PACKAGE_FILES
 
 
 def digest(path: Path) -> str:
@@ -46,7 +38,7 @@ def main() -> int:
     mismatches: list[str] = []
     missing: list[str] = []
 
-    for rel in FILES:
+    for rel in PACKAGE_FILES:
         repo_file = repo / rel
         installed_file = installed / rel
         if not installed_file.exists():

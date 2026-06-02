@@ -6,15 +6,15 @@ Dittobot is a local Codex skill, but writing samples are personal. Treat drafts,
 
 - API keys, access tokens, passwords, cookies, or credentials.
 - Customer data, private drafts, legal or medical details, HR material, or internal company facts.
-- Live-eval transcripts that include private source text.
+- Live-eval transcripts, local profile cards, ledger files, or voice samples that include private text.
 
 Use redacted examples when opening issues.
 
 ## Live Eval
 
-`scripts/live_eval.py` sends selected fixture text to the configured API endpoint only when `OPENAI_API_KEY` is set. It refuses custom API URLs unless `--allow-custom-api-url` is passed, and saved transcripts must end in `.local.jsonl`. Use `--no-save-source` when you want transcript metadata and hashes without raw source text.
+`scripts/live_eval.py` sends selected fixture text to the configured API endpoint only when `OPENAI_API_KEY` is set. It refuses custom API URLs unless `--allow-custom-api-url` is passed, and saved transcripts must end in `.local.jsonl`. Transcript saves are hash-only by default; use `--save-raw-source` or `--save-raw-output` only for public-safe text.
 
-Keep `*.local.jsonl` files local. They are debugging artifacts, not release artifacts.
+Keep `*.local.jsonl`, `*.local.md`, and `*.local.json` files local. They are debugging artifacts, not release artifacts.
 
 ## Reporting
 

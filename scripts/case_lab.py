@@ -7,6 +7,8 @@ import argparse
 import sys
 from pathlib import Path
 
+from ledger import merge_ledgers, parse_fences, parse_ledger_files, split_terms, strip_fences
+
 
 PROMPT_MODES = ("explicit_rewrite", "source_only")
 
@@ -55,6 +57,16 @@ def main() -> int:
     parser.add_argument("--voice", action="append", default=[], help="Voice marker to preserve.")
     parser.add_argument("--forbid", action="append", default=[], help="Forbidden term or phrase.")
     parser.add_argument(
+        "--ledger-file",
+        action="append",
+        default=[],
+        help="Local .json or fence-marked .md file with protected/voice/forbid/claim terms.",
+    )
+    parser.add_argument("--exact-substring", action="append", default=[], help="Exact substring to preserve.")
+    parser.add_argument("--line-prefix", action="append", default=[], help="Required output line prefix.")
+    parser.add_argument("--ordered-term", action="append", default=[], help="Terms that must appear in order.")
+    parser.add_argument("--forbid-artifact", action="append", default=[], help="Artifact text that must not appear.")
+    parser.add_argument(
         "--required-claim",
         action="append",
         default=[],
@@ -84,6 +96,8 @@ def main() -> int:
     args = parser.parse_args()
 
     source = read_value(args.source, args.source_file, "source")
+    ledger = merge_ledgers(parse_fences(source), parse_ledger_files(args.ledger_file))
+    source = strip_fences(source)
     rewrite = read_value(args.rewrite, args.rewrite_file, "rewrite")
     must = clean_terms(args.must)
 
@@ -95,11 +109,23 @@ def main() -> int:
         f"    rewrite={rewrite!r},",
         f"    must={tuple_literal(must)},",
     ]
-    add_tuple_field(lines, "protected", clean_terms(args.protected))
-    add_tuple_field(lines, "preserve_voice", clean_terms(args.voice))
-    add_tuple_field(lines, "forbid", clean_terms(args.forbid))
-    add_tuple_field(lines, "required_claims", clean_terms(args.required_claim))
-    add_tuple_field(lines, "forbid_assertions", clean_terms(args.forbid_assertion))
+    add_tuple_field(lines, "protected", clean_terms(ledger["protected"] + split_terms(args.protected)))
+    add_tuple_field(lines, "preserve_voice", clean_terms(ledger["voice"] + split_terms(args.voice)))
+    add_tuple_field(lines, "forbid", clean_terms(ledger["forbid"] + split_terms(args.forbid)))
+    add_tuple_field(
+        lines,
+        "required_claims",
+        clean_terms(ledger["required_claims"] + split_terms(args.required_claim)),
+    )
+    add_tuple_field(
+        lines,
+        "forbid_assertions",
+        clean_terms(ledger["forbid_assertions"] + split_terms(args.forbid_assertion)),
+    )
+    add_tuple_field(lines, "exact_substrings", clean_terms(args.exact_substring))
+    add_tuple_field(lines, "line_prefixes", clean_terms(args.line_prefix))
+    add_tuple_field(lines, "ordered_terms", clean_terms(args.ordered_term))
+    add_tuple_field(lines, "forbid_artifacts", clean_terms(args.forbid_artifact))
     add_value_field(lines, "exact_words", args.exact_words)
     add_value_field(lines, "max_words", args.max_words)
     add_value_field(lines, "max_ratio", args.max_ratio)

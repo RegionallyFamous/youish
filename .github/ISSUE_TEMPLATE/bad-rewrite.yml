@@ -56,6 +56,12 @@ body:
     attributes:
       label: Voice markers
       description: Phrases, rhythm, tone, jokes, stance, rough edges, or emotional temperature that should survive.
+  - type: textarea
+    id: profile_boundary
+    attributes:
+      label: Profile boundary
+      description: Should this become reusable profile guidance? When should this voice or habit not apply?
+      placeholder: Example: Keep the dry Slack voice for internal notes, but do not apply it to legal/customer notices.
   - type: checkboxes
     id: privacy
     attributes:

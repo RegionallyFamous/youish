@@ -7,6 +7,10 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from package_files import PACKAGE_FILES
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "SKILL.md"
@@ -95,19 +99,11 @@ def main() -> int:
         if "$dittobot" not in text:
             fail("agents/openai.yaml default_prompt must mention $dittobot", errors)
 
-    for rel in (
-        "scripts/audit.py",
-        "scripts/case_lab.py",
-        "scripts/regression_100.py",
-        "scripts/check_install.py",
-        "scripts/install.py",
-        "scripts/live_eval.py",
-        "scripts/validate_skill.py",
-    ):
+    for rel in PACKAGE_FILES:
         path = ROOT / rel
         if not path.exists():
             fail(f"{rel} is missing", errors)
-        elif not path.read_text(encoding="utf-8").startswith("#!/usr/bin/env python3"):
+        elif rel.endswith(".py") and not path.read_text(encoding="utf-8").startswith("#!/usr/bin/env python3"):
             fail(f"{rel} must have a python3 shebang", errors)
 
     for path in text_files():
