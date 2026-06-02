@@ -34,6 +34,9 @@ REQUIRED_PHRASES = (
 ALWAYS_BANNED = (
     "committee paste",
     "committee pasted",
+    "non-developer path",
+    "non-developers",
+    "nondevelopers",
     "paste committee",
     "thesaurus committee",
 )
@@ -189,7 +192,7 @@ def check_use_section(markdown: str, errors: list[str]) -> None:
     skill_installer_position = markdown.find("Use $skill-installer")
     curl_position = markdown.find("curl -fsSL")
     if skill_installer_position == -1:
-        fail("README must lead non-developers to $skill-installer", errors)
+        fail("README must lead with the streamlined $skill-installer path", errors)
     elif curl_position != -1 and curl_position < skill_installer_position:
         fail("README should show $skill-installer before the terminal fallback", errors)
 

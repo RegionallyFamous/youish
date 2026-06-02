@@ -28,11 +28,15 @@ Use $dittobot on this:
 [paste the draft, notes, rant, email, announcement, post, caption, or half-formed thought]
 ```
 
-That is the non-developer path: let Codex install the skill, then use the skill. No git ceremony. No tiny terminal archaeology expedition before you can fix a sentence.
+That is the streamlined path: let Codex install the skill, then use the skill. No git ceremony. No tiny terminal archaeology expedition before you can fix a sentence.
 
 ## The Point
 
 The answer is not "never use AI." The answer is "teach the tool your voice."
+
+This started because I watched the dumbest possible version of the argument show up in real life: people saw bad AI writing, decided they could write better than AI, and jumped straight to "nobody should use AI for writing." The evidence was the usual stuff: too verbose, too generic, weird grammar, dash crimes, and that unmistakable smell of a draft trying to sound important while saying almost nothing.
+
+I agreed with the diagnosis and hated the prescription. Yes, bad AI writing is bad. Congratulations, we have discovered bad tools used badly. The interesting answer is not to ban the tool and hand everyone a purity badge. The interesting answer is to teach the tool taste, voice, restraint, and facts.
 
 Bad AI writing is real. It gets verbose. It invents confidence. It uses phrases nobody says unless a webinar has taken them hostage. I get why people hate it. I hate it too.
 
@@ -183,7 +187,7 @@ Terminal fallback:
 curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/dittobot/main/install.sh | bash
 ```
 
-Developers who want a live symlink can clone the repo instead:
+If you want a live symlink, clone the repo instead:
 
 ```bash
 git clone https://github.com/RegionallyFamous/dittobot.git
