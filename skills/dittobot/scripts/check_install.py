@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import os
 import shlex
+import subprocess
 import sys
 from pathlib import Path
 
@@ -64,6 +65,31 @@ def package_files_in(path: Path) -> set[str]:
     return files
 
 
+def tracked_files_in(path: Path) -> set[str] | None:
+    result = subprocess.run(
+        ["git", "ls-files"],
+        cwd=path,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
+
+
+def looks_like_repo_root_copy(path: Path) -> bool:
+    markers = (
+        "README.md",
+        "LICENSE",
+        ".codex-plugin/plugin.json",
+        "skills/dittobot/SKILL.md",
+        "plugins/dittobot/.codex-plugin/plugin.json",
+    )
+    return all((path / marker).exists() for marker in markers)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -96,8 +122,15 @@ def main() -> int:
         elif not files_match(repo_file, installed_file, rel):
             mismatches.append(rel)
 
+    install_kind = "copy"
     if not install_path.is_symlink():
-        expected = set(PACKAGE_FILES)
+        if looks_like_repo_root_copy(installed):
+            install_kind = "root copy"
+            expected = tracked_files_in(repo)
+            if expected is None:
+                expected = set(PACKAGE_FILES)
+        else:
+            expected = set(PACKAGE_FILES)
         unexpected = sorted(package_files_in(installed) - expected)
 
     if source_missing or missing or mismatches or unexpected:
@@ -119,7 +152,7 @@ def main() -> int:
     if install_path.is_symlink():
         print(f"Installed skill matches repo (symlink): {install_path} -> {installed}")
     else:
-        print(f"Installed skill matches repo (copy): {installed}")
+        print(f"Installed skill matches repo ({install_kind}): {installed}")
     return 0
 
 

@@ -4,6 +4,11 @@
 
 Nothing yet.
 
+## 0.2.6 - 2026-06-02
+
+- Teach the install verifier to accept full repo-root skill copies, matching installers such as `npx skills add RegionallyFamous/dittobot`.
+- Add CI coverage for root-copy installs so package-copy, symlink, and full-repo install paths stay supported.
+
 ## 0.2.5 - 2026-06-02
 
 - Add auditable boundary extraction for explicit "do not use," "avoid," "does not apply," and "do not apply X to Y" guidance.
