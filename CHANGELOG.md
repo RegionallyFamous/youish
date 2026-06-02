@@ -8,6 +8,10 @@
 - Strengthen voice-profile guidance, emotional anti-flattening, and format preservation.
 - Harden deterministic fixture validation for protected facts, modality drift, causality drift, invented details, preambles, and no-dash constraints.
 - Add thought-dump default fixtures, source-only live-eval prompts, clarifying-question guards, wrapper detection, ordered-term checks, artifact cleanup checks, and paragraph/bullet constraints.
+- Add live-eval case listing, prompt printing, and prompt-mode filtering so source-only thought-dump defaults can be inspected without API calls.
+- Add live-eval fail-fast/max-failure controls, hard API setup error stops, richer transcript hashes, and `--no-save-source`.
+- Add claim-level regression checks for polarity, required claims, forbidden assertions, and uncertainty preservation.
+- Add bad-rewrite and regression-case issue templates, pull request checklist, contributor guide, security/privacy guidance, and release checklist.
 
 ## 0.1.0
 

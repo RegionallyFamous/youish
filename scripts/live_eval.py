@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import hashlib
 import json
 import os
 import re
 import sys
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -26,10 +28,16 @@ from regression_100 import Case, make_cases, validate, words
 
 DEFAULT_MODEL = "gpt-5.2"
 DEFAULT_API_URL = "https://api.openai.com/v1/responses"
+PROMPT_MODES = ("any", "explicit_rewrite", "source_only")
+HARD_HTTP_ERRORS = {400, 401, 403, 404}
 
 
 def redact_secrets(text: str) -> str:
     return re.sub(r"sk-[A-Za-z0-9_*.-]+", "sk-...REDACTED", text)
+
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def output_text(response: dict) -> str:
@@ -110,14 +118,22 @@ def call_responses_api(
     return text
 
 
-def selected_cases(case_ids: list[str], limit: int) -> list[Case]:
+def selected_cases(case_ids: list[str], limit: int, prompt_mode: str) -> list[Case]:
     cases = make_cases()
     if case_ids:
         by_id = {case.id: case for case in cases}
         missing = [case_id for case_id in case_ids if case_id not in by_id]
         if missing:
             raise SystemExit(f"Unknown case id(s): {', '.join(missing)}")
-        return [by_id[case_id] for case_id in case_ids]
+        cases = [by_id[case_id] for case_id in case_ids]
+
+    if prompt_mode != "any":
+        cases = [case for case in cases if case.prompt_mode == prompt_mode]
+        if not cases:
+            raise SystemExit(f"No selected cases match --prompt-mode {prompt_mode}.")
+
+    if case_ids:
+        return cases
     return representative_cases(cases, limit)
 
 
@@ -129,6 +145,22 @@ def representative_cases(cases: list[Case], limit: int) -> list[Case]:
         return cases
     step = len(cases) / limit
     return [cases[int(index * step)] for index in range(limit)]
+
+
+def print_case_list(cases: list[Case]) -> None:
+    for case in cases:
+        print(
+            f"{case.id}\t{case.prompt_mode}\t"
+            f"source_words={len(words(case.source))}\trewrite_words={len(words(case.rewrite))}"
+        )
+
+
+def print_prompts(cases: list[Case]) -> None:
+    for index, case in enumerate(cases, 1):
+        if index > 1:
+            print("\n" + "=" * 72 + "\n")
+        print(f"# {case.id} ({case.prompt_mode})")
+        print(user_prompt(case))
 
 
 def validate_api_url(api_url: str, allow_custom: bool) -> None:
@@ -151,10 +183,38 @@ def validate_save_path(path: str | None) -> None:
         raise SystemExit("--save-jsonl path must end with .local.jsonl so git ignores it.")
 
 
+def should_stop(failures: list[tuple[str, list[str]]], fail_fast: bool, max_failures: int | None) -> bool:
+    if fail_fast and failures:
+        return True
+    return max_failures is not None and len(failures) >= max_failures
+
+
+def truncated(text: str, limit: int = 600) -> str:
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "..."
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=10, help="Number of cases to run.")
     parser.add_argument("--case", action="append", default=[], help="Specific case id to run.")
+    parser.add_argument(
+        "--prompt-mode",
+        choices=PROMPT_MODES,
+        default="any",
+        help="Filter cases by prompt style.",
+    )
+    parser.add_argument(
+        "--list-cases",
+        action="store_true",
+        help="List matching case ids without calling the API.",
+    )
+    parser.add_argument(
+        "--print-prompts",
+        action="store_true",
+        help="Print selected prompts without calling the API.",
+    )
     parser.add_argument("--model", default=os.environ.get("OPENAI_MODEL", DEFAULT_MODEL))
     parser.add_argument("--api-url", default=os.environ.get("OPENAI_API_URL", DEFAULT_API_URL))
     parser.add_argument(
@@ -164,7 +224,27 @@ def main() -> int:
     )
     parser.add_argument("--timeout", type=int, default=60)
     parser.add_argument("--max-output-tokens", type=int, default=500)
+    parser.add_argument(
+        "--fail-fast",
+        action="store_true",
+        help="Stop after the first API or validation failure.",
+    )
+    parser.add_argument(
+        "--max-failures",
+        type=int,
+        help="Stop after this many failures.",
+    )
+    parser.add_argument(
+        "--show-output-on-fail",
+        action="store_true",
+        help="Print a truncated model output when deterministic validation fails.",
+    )
     parser.add_argument("--save-jsonl", help="Optional local transcript path. Do not commit it.")
+    parser.add_argument(
+        "--no-save-source",
+        action="store_true",
+        help="When saving JSONL, omit raw source text and store only hashes.",
+    )
     parser.add_argument(
         "--require-key",
         action="store_true",
@@ -174,6 +254,16 @@ def main() -> int:
 
     validate_api_url(args.api_url, args.allow_custom_api_url)
     validate_save_path(args.save_jsonl)
+    if args.max_failures is not None and args.max_failures <= 0:
+        raise SystemExit("--max-failures must be greater than 0.")
+
+    if args.list_cases:
+        print_case_list(selected_cases(args.case, len(make_cases()), args.prompt_mode))
+        return 0
+
+    if args.print_prompts:
+        print_prompts(selected_cases(args.case, args.limit, args.prompt_mode))
+        return 0
 
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
@@ -182,7 +272,8 @@ def main() -> int:
 
     repo = Path(__file__).resolve().parents[1]
     skill_text = (repo / "SKILL.md").read_text(encoding="utf-8")
-    cases = selected_cases(args.case, args.limit)
+    skill_sha256 = sha256_text(skill_text)
+    cases = selected_cases(args.case, args.limit, args.prompt_mode)
 
     save_file = None
     if args.save_jsonl:
@@ -191,13 +282,14 @@ def main() -> int:
     failures: list[tuple[str, list[str]]] = []
     try:
         for case in cases:
+            prompt = user_prompt(case)
             try:
                 text = call_responses_api(
                     api_key=api_key,
                     api_url=args.api_url,
                     model=args.model,
                     skill_text=skill_text,
-                    prompt=user_prompt(case),
+                    prompt=prompt,
                     timeout=args.timeout,
                     max_output_tokens=args.max_output_tokens,
                 )
@@ -206,10 +298,19 @@ def main() -> int:
                 message = f"HTTP {exc.code}: {detail or exc.reason}"
                 failures.append((case.id, [f"API error: {message}"]))
                 print(f"{case.id}: FAIL | API error: {message}")
+                if exc.code in HARD_HTTP_ERRORS:
+                    print("Stopping: hard API setup error.")
+                    return 1
+                if should_stop(failures, args.fail_fast, args.max_failures):
+                    print("Stopping: failure limit reached.")
+                    break
                 continue
             except (urllib.error.URLError, RuntimeError) as exc:
                 failures.append((case.id, [f"API error: {exc}"]))
                 print(f"{case.id}: FAIL | API error: {exc}")
+                if should_stop(failures, args.fail_fast, args.max_failures):
+                    print("Stopping: failure limit reached.")
+                    break
                 continue
 
             live_case = dataclasses.replace(case, rewrite=text)
@@ -218,22 +319,33 @@ def main() -> int:
             print(f"{case.id}: {status} | live words={len(words(text))}")
             for error in errors:
                 print(f"  - {error}")
+            if errors and args.show_output_on_fail:
+                print("  output:")
+                for line in truncated(text).splitlines():
+                    print(f"    {line}")
             if save_file:
+                record = {
+                    "case": case.id,
+                    "prompt_mode": case.prompt_mode,
+                    "model": args.model,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "skill_sha256": skill_sha256,
+                    "source_sha256": sha256_text(case.source),
+                    "prompt_sha256": sha256_text(prompt),
+                    "output": text,
+                    "errors": errors,
+                }
+                if not args.no_save_source:
+                    record["source"] = case.source
                 save_file.write(
-                    json.dumps(
-                        {
-                            "case": case.id,
-                            "model": args.model,
-                            "source": case.source,
-                            "output": text,
-                            "errors": errors,
-                        },
-                        ensure_ascii=False,
-                    )
+                    json.dumps(record, ensure_ascii=False)
                     + "\n"
                 )
             if errors:
                 failures.append((case.id, errors))
+                if should_stop(failures, args.fail_fast, args.max_failures):
+                    print("Stopping: failure limit reached.")
+                    break
     finally:
         if save_file:
             save_file.close()

@@ -158,7 +158,10 @@ class Case:
     exact_substrings: tuple[str, ...] = field(default_factory=tuple)
     line_prefixes: tuple[str, ...] = field(default_factory=tuple)
     ordered_terms: tuple[str, ...] = field(default_factory=tuple)
+    required_claims: tuple[str, ...] = field(default_factory=tuple)
+    forbid_assertions: tuple[str, ...] = field(default_factory=tuple)
     forbid_artifacts: tuple[str, ...] = field(default_factory=tuple)
+    preserve_uncertainty: bool = False
     allow_markdown_fence: bool = False
     prompt_mode: str = "explicit_rewrite"
     protected: tuple[str, ...] = field(default_factory=tuple)
@@ -284,6 +287,18 @@ def validate(case: Case) -> list[str]:
     if forbidden:
         errors.append(f"forbidden terms appeared: {forbidden}")
 
+    missing_claims = [
+        claim for claim in case.required_claims if not contains_term(case.rewrite, claim)
+    ]
+    if missing_claims:
+        errors.append(f"missing required claims: {missing_claims}")
+
+    forbidden_assertions = [
+        claim for claim in case.forbid_assertions if contains_term(unquoted, claim)
+    ]
+    if forbidden_assertions:
+        errors.append(f"forbidden assertions appeared: {forbidden_assertions}")
+
     forbidden_artifacts = [
         term for term in case.forbid_artifacts
         if words(term) and contains_term(case.rewrite, term)
@@ -330,6 +345,19 @@ def validate(case: Case) -> list[str]:
         ]
         if drift:
             errors.append(f"modality drift markers appeared: {drift}")
+
+    if case.preserve_uncertainty:
+        uncertainty_markers = (
+            "maybe",
+            "may",
+            "might",
+            "probably",
+            "not definitive",
+            "not state that as definitive",
+            "I think",
+        )
+        if not any(contains_term(case.rewrite, marker) for marker in uncertainty_markers):
+            errors.append("lost uncertainty marker")
 
     causal_drift = [
         term
@@ -514,6 +542,8 @@ def make_cases() -> list[Case]:
                 rewrite=rewrite,
                 must=(deadline, company, "may need", "not counsel", "Legal"),
                 protected=(deadline, company, doc),
+                required_claims=("may need", "not counsel"),
+                preserve_uncertainty=True,
                 forbid=(
                     "must send",
                     "required to send",
@@ -660,6 +690,8 @@ def make_cases() -> list[Case]:
                 rewrite=rewrite,
                 must=(event, stale, accepted),
                 protected=(event, stale, accepted),
+                required_claims=("probably is not",),
+                preserve_uncertainty=True,
                 forbid=("root cause", "latency", "database"),
             )
         )
@@ -940,6 +972,8 @@ def make_cases() -> list[Case]:
             protected=("importer bug", "retry failed rows"),
             preserve_voice=("haunted changelog",),
             forbid=("somehow", "what I actually mean", "robust", "seamless"),
+            required_claims=("fixed the importer bug", "retry failed rows"),
+            forbid_assertions=("did not fix the importer bug", "cannot retry failed rows"),
             ordered_terms=("importer bug", "retry failed rows", "launch note"),
             forbid_artifacts=("ok", "what i actually mean"),
             max_question_marks=0,
@@ -965,6 +999,8 @@ def make_cases() -> list[Case]:
             protected=("Marco", "Friday", "QA", "Monday"),
             preserve_voice=("spreadsheet weather",),
             forbid=("happy to", "circle back", "door closing"),
+            required_claims=("Friday will not work", "Monday is realistic"),
+            forbid_assertions=("Friday will work", "QA is done"),
             ordered_terms=("Friday", "QA", "Monday"),
             forbid_artifacts=("vibes",),
             max_question_marks=0,
@@ -990,6 +1026,8 @@ def make_cases() -> list[Case]:
             protected=("cache fix", "2:15", "Support", "old screenshots"),
             preserve_voice=("lord's spreadsheet work",),
             forbid=("blaming support", "root cause", "latency"),
+            required_claims=("cache fix is deployed", "docs are lagging"),
+            forbid_assertions=("Support missed", "support is to blame"),
             ordered_terms=("cache fix", "2:15", "Support", "docs are lagging"),
             forbid_artifacts=("status thing", "please make"),
             max_question_marks=0,
@@ -1012,6 +1050,7 @@ def make_cases() -> list[Case]:
             must=("Priya", "timeline concern", "annoying about being right", "Sorry"),
             preserve_voice=("not a personality anyone ordered",),
             forbid=("ugh", "deeply regret", "harm caused"),
+            required_claims=("timeline concern was valid", "annoying about being right"),
             max_words=32,
             ordered_terms=("Priya", "timeline concern", "annoying about being right"),
             max_question_marks=0,
@@ -1034,6 +1073,8 @@ def make_cases() -> list[Case]:
             must=("small store owners", "orders need attention", "on fire", "actually fine"),
             preserve_voice=("on fire", "less on fire", "actually fine"),
             forbid=("empower", "unlock", "homepage blob"),
+            required_claims=("orders need attention first", "No AI magic", "No command center nonsense"),
+            forbid_assertions=("is AI magic", "command center solution"),
             allow_expand=True,
             ordered_terms=("small store owners", "orders need attention", "on fire"),
             forbid_artifacts=("homepage blob", "maybe"),
@@ -1058,6 +1099,7 @@ def make_cases() -> list[Case]:
             must=("made every room less sharp", "honestly", "softly"),
             preserve_voice=("brochure found a candle",),
             forbid=("cherished", "profound loss", "lasting legacy"),
+            required_claims=("made every room less sharp", "do not want grand legacy language"),
             ordered_terms=("made every room less sharp", "honestly", "softly"),
             forbid_artifacts=("i need", "i hate"),
             max_question_marks=0,
@@ -1082,6 +1124,7 @@ def make_cases() -> list[Case]:
             protected=("job ID", "retry count", "CSV"),
             preserve_voice=("screenshot pilgrimage",),
             forbid=("seamless", "customer-centric"),
+            required_claims=("check the job ID first", "then the retry count", "Ask for the CSV only if both look weird"),
             ordered_terms=("job ID", "retry count", "CSV", "screenshot pilgrimage"),
             forbid_artifacts=("process note", "->"),
             max_question_marks=0,
@@ -1105,6 +1148,8 @@ def make_cases() -> list[Case]:
             protected=("tracking pixel", "this week", "Legal"),
             preserve_voice=("glitter cannon",),
             forbid=("vibes", "happy to", "circle back"),
+            required_claims=("not adding another tracking pixel", "Legal has not reviewed"),
+            forbid_assertions=("are adding another tracking pixel", "Legal has reviewed"),
             ordered_terms=("tracking pixel", "this week", "Legal", "glitter cannon"),
             max_question_marks=0,
             forbid_clarifying=True,
@@ -1127,6 +1172,7 @@ def make_cases() -> list[Case]:
             must=("small on purpose", "floorboards squeak", "customers"),
             preserve_voice=("floorboards squeak",),
             forbid=("at scale", "industry-leading", "customer-centricity"),
+            required_claims=("small on purpose", "floorboards squeak"),
             ordered_terms=("small on purpose", "floorboards squeak", "customers"),
             forbid_artifacts=("founder note maybe",),
             max_question_marks=0,
@@ -1150,6 +1196,7 @@ def make_cases() -> list[Case]:
             protected=("Ana", "Dev", "Finance", "Friday"),
             preserve_voice=("decorative sticker",),
             forbid=("weird auth question", "clean but"),
+            required_claims=("Ana owns copy", "Dev owns the auth question", "Friday is not a deadline"),
             ordered_terms=("Ana", "Dev", "Finance", "decorative sticker"),
             forbid_artifacts=("recap from call",),
             max_question_marks=0,
@@ -1287,6 +1334,21 @@ def run_validator_self_tests() -> list[str]:
             Case("self_ending", "A", "A B", must=("A",), ends_with="A"),
             "ending failed",
         ),
+        (
+            "required claims",
+            Case("self_claim", "We are not doing it", "We are doing it", must=("doing",), required_claims=("not doing it",)),
+            "missing required claims",
+        ),
+        (
+            "forbidden assertions",
+            Case("self_assertion", "Legal has not reviewed", "Legal has reviewed it", must=("Legal",), forbid_assertions=("Legal has reviewed",)),
+            "forbidden assertions appeared",
+        ),
+        (
+            "lost uncertainty",
+            Case("self_uncertain", "This might apply", "This applies", must=("applies",), preserve_uncertainty=True),
+            "lost uncertainty marker",
+        ),
     ]
     failures: list[str] = []
     for name, case, expected in checks:
@@ -1405,6 +1467,30 @@ def run_negative_fixture_tests() -> list[str]:
                 ),
             ),
             "ordered terms out of order",
+        ),
+        (
+            "thought dump polarity",
+            replace(
+                by_id["thought_dump_firm_reply_08"],
+                rewrite=(
+                    "We are adding another tracking pixel this week. Legal has reviewed "
+                    "it, and checkout can handle the glitter cannon."
+                ),
+            ),
+            "missing required claims",
+        ),
+        (
+            "uncertainty deletion",
+            replace(
+                by_id["technical_fidelity_01"],
+                rewrite=(
+                    "This is not a cache issue exactly. The invalidation event is firing, "
+                    "but the UI keeps showing the previous response until the next "
+                    "interaction. That makes people think it failed, even though the "
+                    "system says API accepted it."
+                ),
+            ),
+            "lost uncertainty marker",
         ),
     ]
     failures: list[str] = []

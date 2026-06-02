@@ -1,0 +1,65 @@
+name: Bad rewrite
+description: Report a Dittobot output that changed meaning, flattened voice, invented details, or missed the point.
+title: "Bad rewrite: "
+labels: ["bad rewrite", "needs regression"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make Dittobot sharper. Please remove private names, secrets, customer data, medical/legal details, and anything you do not want public.
+  - type: dropdown
+    id: failure_type
+    attributes:
+      label: Failure type
+      options:
+        - Changed meaning
+        - Invented fact or claim
+        - Flattened voice
+        - Too verbose
+        - Too formal or cheerful
+        - Added wrapper, note, or rationale
+        - Asked an unnecessary clarifying question
+        - Missed the throughline
+        - Violated a hard constraint
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source text
+      description: Redact anything private. Keep enough texture to reproduce the failure.
+      placeholder: Paste the messy draft, note, or prose sample here.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Dittobot output
+      description: Paste the output that failed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should Dittobot have preserved, changed, avoided, or inferred?
+    validations:
+      required: true
+  - type: textarea
+    id: protected
+    attributes:
+      label: Protected facts or constraints
+      description: Names, dates, numbers, claims, quotes, word counts, no-dash rules, or other facts that must not change.
+  - type: textarea
+    id: voice
+    attributes:
+      label: Voice markers
+      description: Phrases, rhythm, tone, jokes, stance, rough edges, or emotional temperature that should survive.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed secrets, API keys, customer data, and private drafts that should not be public.
+          required: true

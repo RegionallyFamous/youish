@@ -264,11 +264,14 @@ Run the optional live model smoke test when you have an API key. This is not a b
 ```bash
 export OPENAI_API_KEY="sk-..."
 python3 scripts/live_eval.py --limit 10
+python3 scripts/live_eval.py --prompt-mode source_only --limit 5
+python3 scripts/live_eval.py --list-cases --prompt-mode source_only
+python3 scripts/live_eval.py --print-prompts --prompt-mode source_only --limit 2
 python3 scripts/live_eval.py --case legal_precision_01 --model "$OPENAI_MODEL"
-python3 scripts/live_eval.py --limit 20 --model gpt-5-mini --save-jsonl live-eval-results.local.jsonl
+python3 scripts/live_eval.py --limit 20 --model gpt-5-mini --fail-fast --show-output-on-fail --save-jsonl live-eval-results.local.jsonl --no-save-source
 ```
 
-Use `--limit` or `--case` to keep cost bounded. If `OPENAI_API_KEY` is not set, the live eval skips cleanly. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored.
+Use `--limit`, `--case`, `--prompt-mode source_only`, `--fail-fast`, or `--max-failures` to keep cost bounded and target the messy-default path. `--list-cases` and `--print-prompts` do not call the API. If `OPENAI_API_KEY` is not set, the live eval skips cleanly. Saved JSONL transcripts are local debugging artifacts and must use `.local.jsonl` so they stay ignored; add `--no-save-source` to store hashes without raw source text.
 
 Custom API URLs are blocked unless you pass `--allow-custom-api-url`; do that only for endpoints you trust with your bearer token and sample text.
 
@@ -278,7 +281,11 @@ Voice samples are personal. Dittobot does not require storing them in this repo.
 
 ## Contributing
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributor guide, [SECURITY.md](SECURITY.md) for privacy/security reporting, and [RELEASE.md](RELEASE.md) for release validation.
+
 Contributions should make the skill sharper without making it bloated. The skill body is intentionally lean so normal use stays fast and token-responsible.
+
+Use the GitHub issue templates for bad rewrites or proposed regression cases. The best reports include a redacted source, the failed output, protected facts, voice markers, and what should have happened.
 
 Good changes usually do one of three things:
 

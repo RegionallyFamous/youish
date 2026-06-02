@@ -40,3 +40,9 @@ jobs:
         env:
           OPENAI_API_KEY: ""
         run: python3 scripts/live_eval.py --limit 1
+
+      - name: Verify live eval case inspection
+        run: |
+          python3 scripts/live_eval.py --list-cases --prompt-mode source_only | grep thought_dump
+          python3 scripts/live_eval.py --print-prompts --prompt-mode source_only --limit 1 | grep "ok the launch note"
+          ! python3 scripts/live_eval.py --max-failures 0
