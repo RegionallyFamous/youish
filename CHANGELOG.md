@@ -4,6 +4,11 @@
 
 Nothing yet.
 
+## 0.3.6 - 2026-06-02
+
+- Tune normal rewrites toward meaningful editorial lift so voice preservation does not become near-copy under-editing.
+- Add deterministic editorial-lift contracts that fail passthrough rewrites when drafts need stronger thesis, structure, stakes, or argument shape.
+
 ## 0.3.5 - 2026-06-02
 
 - Clarify the complete Skills.sh listing field map so repo-controlled, repo-documented, discovery-signal, and Skills.sh-generated fields are labeled honestly.

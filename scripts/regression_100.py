@@ -208,6 +208,7 @@ class Case:
     reader_actions: tuple[str, ...] = field(default_factory=tuple)
     polarity_sensitive: tuple[str, ...] = field(default_factory=tuple)
     min_avg_sentence_words: float | None = None
+    max_source_similarity: float | None = None
 
 
 def words(text: str) -> list[str]:
@@ -732,6 +733,16 @@ def validate(case: Case) -> list[str]:
             errors.append(
                 "sentence quality failed: average words per sentence "
                 f"{average:.1f}, expected at least {case.min_avg_sentence_words:.1f}"
+            )
+
+    if case.max_source_similarity is not None:
+        source_signature = normalized(case.source)
+        rewrite_signature = normalized(case.rewrite)
+        similarity = SequenceMatcher(None, source_signature, rewrite_signature).ratio()
+        if similarity > case.max_source_similarity:
+            errors.append(
+                "editorial lift failed: source similarity "
+                f"{similarity:.2f}, expected at most {case.max_source_similarity:.2f}"
             )
 
     paragraphs = paragraph_count(case.rewrite)
@@ -1801,6 +1812,17 @@ def run_validator_self_tests() -> list[str]:
             "sentence quality failed",
         ),
         (
+            "editorial lift",
+            Case(
+                "self_editorial_lift",
+                "This draft needs a stronger point and better order.",
+                "This draft needs a stronger point and better order.",
+                must=("stronger point", "better order"),
+                max_source_similarity=0.7,
+            ),
+            "editorial lift failed",
+        ),
+        (
             "opening",
             Case("self_opening", "A", "B A", must=("A",), starts_with="A"),
             "opening failed",
@@ -2861,6 +2883,146 @@ def run_source_only_artifact_contract_tests() -> list[str]:
     return failures
 
 
+def run_editorial_lift_contract_tests() -> list[str]:
+    """Prevent normal rewrites from passing as near-copy voice preservation."""
+    wordpress_memory = Case(
+        id="editorial_lift_wordpress_memory_contract",
+        source=(
+            "In WordPress Core AI — 7.1 Planning and Beyond, I described Guidelines "
+            "as one of the workstreams that could shape WordPress 7.1 and the next "
+            "phase of Core AI. I didn’t make a strong personal case there for why "
+            "the Guidelines work matter more than it may first appear. Radical Speed "
+            "Month gave me the opportunity to do that work alongside @arturpiszek, "
+            "under the thesis that Agent Memory is the real moat.\n\n"
+            "This post is the opinionated version. Guidelines is not just a place to "
+            "store editorial preferences. It is the first concrete step toward a "
+            "WordPress-native persistence layer for agents: memories, skills, "
+            "artifacts, plans, and other reusable context that should be discoverable, "
+            "permissioned, inspectable, and portable. This post explains what I mean "
+            "by memory in this context, why I think the primitive belongs in WordPress "
+            "core rather than in any plugin, and how the wp_guideline CPT can grow to "
+            "hold it. The technical groundwork is in progress now in Gutenberg PR "
+            "#78296, currently at the access refinement stage, with the larger vision "
+            "tracked in issue #77230."
+        ),
+        rewrite=(
+            "In WordPress Core AI: 7.1 Planning and Beyond, I described Guidelines as "
+            "one workstream for WordPress 7.1 and the next phase of Core AI. What I "
+            "did not do there was make the stronger case for why Guidelines matters "
+            "more than it looks.\n\n"
+            "Radical Speed Month gave me the chance to make that case with "
+            "@arturpiszek, under the thesis that Agent Memory is the real moat.\n\n"
+            "This is the opinionated version.\n\n"
+            "Guidelines is not just an editorial-preferences bucket. It is the first "
+            "real step toward a WordPress-native persistence layer for agents: "
+            "memories, skills, artifacts, plans, and other reusable context that "
+            "should be discoverable, permissioned, inspectable, and portable.\n\n"
+            "That primitive belongs in WordPress core, not plugin-side glue. If agents "
+            "are going to work across the whole WordPress experience, their memory "
+            "layer needs to be part of the same substrate: durable, inspectable, "
+            "portable, and governed by WordPress permissions.\n\n"
+            "This post explains what I mean by memory, why wp_guideline is the right "
+            "starting point, and how it can grow into a broader persistence layer. "
+            "The technical groundwork is already in progress in Gutenberg PR #78296, "
+            "currently at the access-refinement stage, with the larger vision tracked "
+            "in issue #77230."
+        ),
+        must=(
+            "WordPress Core AI",
+            "Guidelines",
+            "Agent Memory is the real moat",
+            "WordPress-native persistence layer",
+            "wp_guideline",
+            "Gutenberg PR",
+            "#78296",
+            "#77230",
+        ),
+        protected=("WordPress 7.1", "@arturpiszek", "wp_guideline", "#78296", "#77230"),
+        preserve_voice=("the real moat", "opinionated"),
+        required_claims=(
+            "Guidelines matters more than it looks",
+            "primitive belongs in WordPress core",
+            "memory layer needs to be part of the same substrate",
+        ),
+        ordered_terms=("WordPress Core AI", "Radical Speed Month", "WordPress-native persistence layer", "plugin-side glue", "#78296"),
+        max_source_similarity=0.65,
+    )
+    buried_update = Case(
+        id="editorial_lift_buried_update_contract",
+        source=(
+            "The plan is interesting but it is kind of buried. We have the importer "
+            "fix, the retry path, and the customer note, and I want the update to feel "
+            "more confident. Right now the first paragraph spends forever saying "
+            "background things and then the actual point shows up tired."
+        ),
+        rewrite=(
+            "Lead with the point: the importer fix is done, the retry path is ready, "
+            "and the customer note should say that plainly.\n\n"
+            "The current draft buries that under background. Cut the warm-up, put the "
+            "fix and retry path in the first paragraph, and let the update sound "
+            "confident because the actual point finally shows up on time."
+        ),
+        must=("importer fix", "retry path", "customer note", "Lead with the point"),
+        preserve_voice=("actual point", "shows up on time"),
+        required_claims=("importer fix is done", "retry path is ready"),
+        reader_actions=("Lead with the point", "Cut the warm-up"),
+        max_source_similarity=0.6,
+    )
+    ai_argument = Case(
+        id="editorial_lift_argument_contract",
+        source=(
+            "I want to say the AI argument is backwards. People saw bad AI writing "
+            "and decided the answer is not using AI, but that is the weakest possible "
+            "conclusion. The real answer is better taste, better memory, and better "
+            "tools. I need this to sound annoyed but not like I am trying to start a "
+            "sidewalk argument."
+        ),
+        rewrite=(
+            "The AI argument is backwards. People saw bad AI writing and decided the "
+            "answer was to avoid AI entirely, which is the weakest possible "
+            "conclusion.\n\n"
+            "The real answer is better taste, better memory, and better tools. Bad "
+            "output is not proof that the tool should be banned; it is proof that the "
+            "workflow needs standards.\n\n"
+            "I want this to sound annoyed, because I am annoyed, but not like I am "
+            "trying to start a sidewalk argument."
+        ),
+        must=("AI argument is backwards", "better taste", "better memory", "better tools"),
+        preserve_voice=("weakest possible conclusion", "sidewalk argument"),
+        preserve_stance=("annoyed",),
+        required_claims=("answer was to avoid AI entirely", "workflow needs standards"),
+        max_source_similarity=0.6,
+    )
+    checks = [
+        ("WordPress argument lifted", wordpress_memory, None),
+        (
+            "WordPress argument barely touched",
+            replace(wordpress_memory, rewrite=wordpress_memory.source),
+            "editorial lift failed",
+        ),
+        ("buried update lifted", buried_update, None),
+        (
+            "buried update barely touched",
+            replace(buried_update, rewrite=buried_update.source),
+            "editorial lift failed",
+        ),
+        ("AI argument lifted", ai_argument, None),
+        (
+            "AI argument barely touched",
+            replace(ai_argument, rewrite=ai_argument.source),
+            "editorial lift failed",
+        ),
+    ]
+    failures: list[str] = []
+    for name, case, expected in checks:
+        errors = validate(case)
+        if expected is None and errors:
+            failures.append(f"{name}: expected pass, got {errors}")
+        elif expected is not None and not any(expected in error for error in errors):
+            failures.append(f"{name}: expected {expected}, got {errors}")
+    return failures
+
+
 def run_voice_texture_contract_tests() -> list[str]:
     """Catch over-sanitizing that removes identity, plain words, or the best line."""
     checks = [
@@ -3475,6 +3637,10 @@ def run_mutation_tests() -> list[str]:
                 errors = validate(replace(case, rewrite=rewrite))
                 expect_error(case.id, "dropped uncertainty", errors, "lost uncertainty marker")
 
+        if case.max_source_similarity is not None:
+            errors = validate(replace(case, rewrite=case.source))
+            expect_error(case.id, "under-edited passthrough", errors, "editorial lift failed")
+
         if any(contains_term(case.source, term) for term in ("maybe", "may", "might", "probably")):
             rewrite = f"{case.rewrite} This definitely will happen."
             errors = validate(replace(case, rewrite=rewrite))
@@ -3515,6 +3681,7 @@ def main() -> int:
     reader_action_test_failures = run_reader_action_contract_tests()
     thought_dump_test_failures = run_thought_dump_contract_tests()
     source_only_artifact_test_failures = run_source_only_artifact_contract_tests()
+    editorial_lift_test_failures = run_editorial_lift_contract_tests()
     format_test_failures = run_format_contract_tests()
     voice_texture_test_failures = run_voice_texture_contract_tests()
     authorship_boundary_test_failures = run_authorship_boundary_contract_tests()
@@ -3529,6 +3696,7 @@ def main() -> int:
         or reader_action_test_failures
         or thought_dump_test_failures
         or source_only_artifact_test_failures
+        or editorial_lift_test_failures
         or format_test_failures
         or voice_texture_test_failures
         or authorship_boundary_test_failures
@@ -3545,6 +3713,7 @@ def main() -> int:
             + reader_action_test_failures
             + thought_dump_test_failures
             + source_only_artifact_test_failures
+            + editorial_lift_test_failures
             + format_test_failures
             + voice_texture_test_failures
             + authorship_boundary_test_failures

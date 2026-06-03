@@ -1,15 +1,15 @@
 ---
 name: youish
-description: Rewrite, edit, tighten, punch up, or diagnose user prose while preserving voice, intent, facts, stance, rhythm, humor, and formality. Use for emails, posts, raw notes, thought dumps, essays, docs, web copy, speeches, bios, captions, cover letters, or requests to make writing clearer, shorter, more natural, less AI-sounding, warmer, sharper, more persuasive, or more like the user. Triggers on messy drafts, voice-preserving rewrites, copyedits, prose diagnosis, and reusable voice profiles. Do not use for pure from-scratch drafting unless the user provides source text or asks for a draft in an established voice.
+description: Rewrite, edit, tighten, punch up, or diagnose user prose while preserving voice, intent, facts, stance, rhythm, humor, and formality. Use for emails, posts, raw notes, thought dumps, docs, web copy, or requests to make writing clearer, shorter, more natural, less AI-sounding, warmer, sharper, more persuasive, or more like the user. Triggers on messy drafts, copyedits, prose diagnosis, and reusable voice profiles. Do not use for from-scratch drafting unless the user provides source text or asks for an established voice.
 license: GPL-2.0-or-later
 metadata:
   author: Regionally Famous
-  version: "0.3.5"
+  version: "0.3.6"
 ---
 
 # Youish
 
-Voice-faithful rewriting and editing for emails, posts, raw notes, thought dumps, docs, captions, bios, speeches, and web copy. Use when the user provides source text and wants it clearer, shorter, warmer, sharper, more persuasive, less AI-sounding, or more like them without losing facts, stance, rhythm, uncertainty, humor, or useful weirdness.
+Voice-faithful rewriting and editing for user prose. Use when the user wants text clearer, shorter, warmer, sharper, more persuasive, less AI-sounding, or more like them without losing facts, stance, rhythm, uncertainty, humor, or weirdness.
 
 ## When To Apply
 
@@ -24,17 +24,19 @@ Rewrite like a sharp editor with restraint. Preserve the writer first, improve t
 
 Never make writing worse to hide AI use. No fake mistakes, forced slang, random fragments, or performative messiness. Human writing feels human because it has a speaker, audience, reason, stakes, rhythm, and specific choices.
 
-Good editing is taste under constraint: know what to leave alone, cut, clarify, and what would become dishonest if polished.
+Good editing is taste under constraint: know what to leave alone, cut, clarify, strengthen, and what would become dishonest if polished.
+
+Voice preservation is the floor, not the finish. Unless the user asks for proofread, minimal, or light touch, each rewrite should visibly improve thesis, order, stakes, ask, rhythm, or ending.
 
 Do not launder emotional stance. Keep justified anger, uncertainty, tenderness, edge, grief, playfulness, awkwardness, restraint, and mixed feelings; soften only when requested or when they block the goal.
 
 ## Fast Defaults
 
-Use the lightest edit that satisfies the request. If the draft works, make small improvements. Do not rewrite strong sentences.
+Use the lightest edit that creates real lift. If the draft works, keep strong sentences, but still improve the highest-leverage thing: thesis, order, stakes, specificity, transitions, ask, or ending. Do not settle for punctuation-only cleanup unless asked.
 
 For normal edits, run three silent gates: intent/facts/stance, voice/rhythm/taste, and constraints/output. For messy, high-stakes, or persuasive work, find the gap between draft behavior and intent before line edits.
 
-For vague requests such as "make this better," preserve meaning, facts, stance, emotional temperature, and voice; tighten clutter; clarify the point; return only the rewrite unless the user asks for rationale or the edit involves a meaningful tradeoff.
+For vague requests such as "make this better," preserve meaning, facts, stance, emotional temperature, and voice; tighten clutter; clarify the point; make it land harder; return only the rewrite unless the user asks for rationale or the edit involves a meaningful tradeoff.
 
 For raw notes, rough drafts, fragments, or thought dumps with no explicit task, infer the artifact from cues: email, Slack, announcement, post, note, recap, caption, or short prose. Find the throughline, keep the best texture, remove scratch-work, and return the most usable version the notes support for the apparent audience. Treat false starts, corrections, repetition, and asides as voice evidence, not necessarily content. If the dump says "actually," "wait," "scratch that," "ignore that," or "no," treat the latest explicit correction as live. Do not make it more formal, certain, cheerful, generic, complete, or single-minded than the source supports.
 
@@ -82,7 +84,7 @@ For legal, medical, financial, academic, employment, technical, interpersonal, o
 
 ## Quality Gates
 
-Before delivery, check: meaning unchanged, facts intact, uncertainty preserved, stance recognizable, reader need clearer, rhythm alive, constraints obeyed, no generic AI polish. If anyone could have written it, restore 2-3 source markers and cut one generic addition.
+Before delivery, check: meaning unchanged, facts intact, uncertainty preserved, stance recognizable, reader need clearer, rhythm alive, constraints obeyed, no generic AI polish. Ask what got better; if the answer is only grammar, revise again unless asked for proofread or minimal edits. If anyone could have written it, restore 2-3 source markers and cut one generic addition.
 
 Edit in this order when the work is messy: purpose, reader, protected facts, structure, sentence clarity, rhythm, ending. Do not polish sentence-level style while the point, ask, or claim is still broken.
 
