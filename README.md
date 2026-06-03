@@ -58,12 +58,12 @@ What Youish fixes/protects:
 
 - The facts are "importer bug fixed" and "failed rows can be retried."
 - The writing problem is throat-clearing before the facts.
-- The best voice marker is "haunted changelog wearing a meeting lanyard"; "allergic to information" is evidence, not required cargo.
+- The best voice marker is "haunted changelog"; "allergic to information" and "wearing a meeting lanyard" are evidence, not required cargo.
 
 Rewrite:
 
 ```text
-We fixed the importer bug. Failed rows can now be retried. The note should be calm and useful, not a haunted changelog wearing a meeting lanyard.
+We fixed the importer bug. Failed rows can now be retried. Keep the launch note calm and useful, not a haunted changelog.
 ```
 
 ### Generic AI Paste
@@ -82,7 +82,7 @@ What Youish notices:
 Rewrite:
 
 ```text
-This draft sounds like it is wearing a borrowed suit and refusing to say where it works. Add what changed, who it helps, and what people can do now.
+This draft is wearing a borrowed suit and refusing to say where it works. Add what changed, who it helps, and what people can do now.
 ```
 
 ### Voice Worth Keeping
@@ -95,13 +95,13 @@ This draft is not bad. It just walks into the room, apologizes for existing, and
 
 What Youish fixes/protects:
 
-- The image is the point, not a joke to sand down.
-- A smoother rewrite would be worse.
+- The image carries the point, so sanding it down would make the writing worse.
+- The rewrite can still tighten the sentence around that image.
 
 Rewrite:
 
 ```text
-The draft is not bad. It just walks into the room, apologizes for existing, and hands the reader a damp napkin labeled strategy. The idea works; the framing is getting in its way.
+The draft is not bad. It walks in, apologizes for existing, and hands the reader a damp napkin labeled strategy.
 ```
 
 ### Precision-Sensitive Writing
@@ -120,7 +120,7 @@ What Youish fixes/protects:
 Rewrite:
 
 ```text
-I think we may need to send notice within 10 business days. I would not state that as definitive, because I am not counsel, the clause had unusual carveouts, and I do not want to turn "maybe" into a courtroom kazoo.
+I think notice may be due within 10 business days, but I am not counsel and the clause had weird carveouts. I do not want to turn "maybe" into a courtroom kazoo.
 ```
 
 ### Mixed Human Stance
@@ -134,12 +134,12 @@ I am a little angry that people saw bad AI writing and decided the answer was ba
 What Youish fixes/protects:
 
 - The anger and hope both matter.
-- The weird stance matters too: annoyed, hopeful, and unwilling to pretend pencils are holy.
+- The best weird marker is "pencils-are-holy club"; the typewriter bit is fun, but not necessary.
 
 Rewrite:
 
 ```text
-I am annoyed that people saw bad AI writing and decided the answer was banning the tool. But I am also genuinely excited, because we can teach it taste instead of joining the pencils-are-holy club and polishing our typewriters by candlelight.
+I am annoyed that people saw bad AI writing and decided the answer was banning the tool. I am also genuinely excited, because we can teach it taste instead of joining the pencils-are-holy club.
 ```
 
 ## What Skeptics Are Right About
