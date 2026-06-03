@@ -209,21 +209,23 @@ Other install paths:
 npx skills add https://github.com/RegionallyFamous/youish --skill youish
 ```
 
+The public `skills` CLI installs the runtime skill payload, not Youish's full release package; `metadata.json` is catalog/release metadata and is intentionally omitted by current `npx skills add` installs.
+
 ```bash
-gh skill install RegionallyFamous/youish skills/youish --agent codex --scope user --pin v0.3.10
+gh skill install RegionallyFamous/youish skills/youish --agent codex --scope user --pin v0.3.11
 ```
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/youish/v0.3.10/install.sh | YOUISH_REF=v0.3.10 bash
+curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/youish/v0.3.11/install.sh | YOUISH_REF=v0.3.11 bash
 ```
 
 For a deterministic release-asset install that pulls the published skill ZIP and verifies it against `SHA256SUMS`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/youish/v0.3.10/install.sh | YOUISH_REF=v0.3.10 YOUISH_SOURCE=release-zip bash
+curl -fsSL https://raw.githubusercontent.com/RegionallyFamous/youish/v0.3.11/install.sh | YOUISH_REF=v0.3.11 YOUISH_SOURCE=release-zip bash
 ```
 
-Install destinations differ by tool: `npx skills` currently installs Codex-compatible skills into `~/.agents/skills/youish`; `gh skill install --agent codex --scope user` installs into `~/.codex/skills/youish`.
+Install destinations differ by tool and execution context: `npx skills` may install into the current working directory's `./.agents/skills/youish`, while `gh skill install --agent codex --scope user` installs into `~/.codex/skills/youish`.
 
 More options live in the [Install wiki](https://github.com/RegionallyFamous/youish/wiki/Install).
 

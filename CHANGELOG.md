@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.11 - 2026-06-03
+
+- Add a `skills-cli` install-verifier mode for the public `npx skills add` payload, which omits catalog-only repo metadata.
+- Add exact SKILL.md version checks to install verification so public smoke tests catch stale installs directly.
+- Keep the Skills.sh listing audit honest: repo grouping config is valid, while live page refresh remains cache/index dependent.
+
 ## 0.3.10 - 2026-06-03
 
 - Tighten default rewrite guidance so preserving voice is not enough when the edit gets longer without reader value.

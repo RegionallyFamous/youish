@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -18,6 +19,10 @@ from package_files import PACKAGE_FILES
 
 IGNORED_EXTRA_NAMES = {".DS_Store"}
 IGNORED_EXTRA_SUFFIXES = {".pyc"}
+CATALOG_ONLY_FILES = {"metadata.json"}
+SKILLS_CLI_REQUIRED_FILES = tuple(
+    rel for rel in PACKAGE_FILES if rel not in CATALOG_ONLY_FILES
+)
 
 
 def digest(path: Path) -> str:
@@ -49,6 +54,17 @@ def files_match(repo_file: Path, installed_file: Path, rel: str) -> bool:
         if repo_meta.get(key) != installed_meta.get(key):
             return False
     return True
+
+
+def skill_version(path: Path) -> str | None:
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        return None
+    _start, frontmatter, _body = text.split("---\n", 2)
+    match = re.search(r"(?m)^\s*version:\s*[\"']?([^\"'\n]+)[\"']?\s*$", frontmatter)
+    if match is None:
+        return None
+    return match.group(1).strip()
 
 
 def package_files_in(path: Path) -> set[str]:
@@ -102,6 +118,16 @@ def main() -> int:
         default=default_install_dir(),
         help="Installed skill directory to compare.",
     )
+    parser.add_argument(
+        "--mode",
+        choices=("package", "skills-cli"),
+        default="package",
+        help=(
+            "package requires the full Youish package; skills-cli checks the runtime "
+            "payload installed by npx skills add and allows catalog-only files to be omitted."
+        ),
+    )
+    parser.add_argument("--version", help="Require SKILL.md metadata.version to match.")
     args = parser.parse_args()
 
     repo = Path(__file__).resolve().parents[1]
@@ -117,7 +143,11 @@ def main() -> int:
     source_missing: list[str] = []
     unexpected: list[str] = []
 
-    for rel in PACKAGE_FILES:
+    required_files = (
+        SKILLS_CLI_REQUIRED_FILES if args.mode == "skills-cli" else PACKAGE_FILES
+    )
+
+    for rel in required_files:
         repo_file = repo / rel
         installed_file = installed / rel
         if not repo_file.exists():
@@ -128,14 +158,25 @@ def main() -> int:
             mismatches.append(rel)
 
     install_kind = "copy"
+    if args.version:
+        installed_skill = installed / "SKILL.md"
+        actual_version = skill_version(installed_skill) if installed_skill.exists() else None
+        if actual_version != args.version:
+            mismatches.append(
+                f"SKILL.md metadata.version is {actual_version!r}, expected {args.version!r}"
+            )
+
     if not install_path.is_symlink():
-        if looks_like_repo_root_copy(installed):
+        if args.mode == "skills-cli":
+            install_kind = "skills CLI copy"
+            expected = package_files_in(installed)
+        elif looks_like_repo_root_copy(installed):
             install_kind = "root copy"
             expected = tracked_files_in(repo)
             if expected is None:
-                expected = set(PACKAGE_FILES)
+                expected = set(required_files)
         else:
-            expected = set(PACKAGE_FILES)
+            expected = set(required_files)
         unexpected = sorted(package_files_in(installed) - expected)
 
     if source_missing or missing or mismatches or unexpected:
