@@ -77,7 +77,7 @@ def main() -> int:
         errors.append("metadata.json skillsSh.summaryMarkdown is missing")
     expected_npx = "npx skills add https://github.com/RegionallyFamous/youish --skill youish"
     expected_gh = (
-        "gh skill install RegionallyFamous/youish skills/youish "
+        "gh skill install RegionallyFamous/youish youish "
         f"--agent codex --scope user --pin v{version}"
     )
     expected_curl = (
@@ -89,14 +89,22 @@ def main() -> int:
         f"v{version}/install.sh | YOUISH_REF=v{version} YOUISH_SOURCE=release-zip bash"
     )
     readme = read("README.md")
-    for label, command in (
-        ("README npx install command", expected_npx),
-        ("README gh skill install command", expected_gh),
-        ("README curl install command", expected_curl),
-        ("README release ZIP install command", expected_release_zip),
+    for link in (
+        "https://github.com/RegionallyFamous/youish/wiki/Install",
+        "https://github.com/RegionallyFamous/youish/wiki/Distribution",
+        "https://github.com/RegionallyFamous/youish/wiki/Validation",
+        "https://github.com/RegionallyFamous/youish/wiki/Research-Thread",
     ):
-        if command not in readme:
-            errors.append(f"{label} is missing or not pinned exactly: {command}")
+        if link not in readme:
+            errors.append(f"README is missing wiki reference link: {link}")
+    for label, command in (
+        ("npx install command", expected_npx),
+        ("gh skill install command", expected_gh),
+        ("curl install command", expected_curl),
+        ("release ZIP install command", expected_release_zip),
+    ):
+        if command in readme:
+            errors.append(f"README includes detailed {label} that belongs in the wiki: {command}")
     install_command = skills_sh.get("installCommand")
     if install_command != expected_npx:
         errors.append(
