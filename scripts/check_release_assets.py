@@ -119,12 +119,15 @@ def check_scorecard_payload(payload: dict, version: str) -> list[str]:
         if contracts.get("status") != "PASS":
             errors.append("scorecard contract_tests status must be PASS")
         groups = contracts.get("groups")
-        if not isinstance(groups, list) or len(groups) != 19:
-            errors.append("scorecard contract_tests.groups must contain 19 groups")
-        elif "contract_registration_contracts" not in {
+        if not isinstance(groups, list) or len(groups) != 20:
+            errors.append("scorecard contract_tests.groups must contain 20 groups")
+        elif not {"anti_noop_contracts", "contract_registration_contracts"}.issubset({
             str(group.get("name")) for group in groups if isinstance(group, dict)
-        }:
-            errors.append("scorecard contract_tests.groups must include contract_registration_contracts")
+        }):
+            errors.append(
+                "scorecard contract_tests.groups must include anti_noop_contracts "
+                "and contract_registration_contracts"
+            )
     return errors
 
 

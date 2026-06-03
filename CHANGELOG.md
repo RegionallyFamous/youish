@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.13 - 2026-06-03
+
+- Add anti-no-op contract coverage for rewrites that barely edit, pad the result, soften the claim, hoard voice markers, or drop the best marker.
+- Tighten runtime guidance so near-copy edits fail unless minimal/proofread was requested, and visible lift must sharpen the point, order, stakes, ask, or ending.
+- Register the new anti-no-op contract group in the public scorecard while keeping the primary deterministic suite at 100 cases.
+
 ## 0.3.12 - 2026-06-03
 
 - Reframe the runtime skill around the new north star: better writing first, concision second, voice preservation inside that standard.

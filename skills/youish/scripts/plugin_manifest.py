@@ -7,7 +7,7 @@ import re
 
 
 PLUGIN_NAME = "youish"
-DEFAULT_VERSION = "0.3.12"
+DEFAULT_VERSION = "0.3.13"
 PLUGIN_DESCRIPTION = "Sharper, tighter rewrites that still sound like you."
 SEMVER_RE = re.compile(
     r"^(0|[1-9]\d*)\."

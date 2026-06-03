@@ -4,7 +4,7 @@ description: Rewrite, edit, tighten, punch up, or diagnose prose into better, co
 license: GPL-2.0-or-later
 metadata:
   author: Regionally Famous
-  version: "0.3.12"
+  version: "0.3.13"
 ---
 
 # Youish
@@ -26,11 +26,11 @@ North star, in order: make it well written, make it concise, then make sure it s
 
 Never make writing worse to hide AI use. No fake mistakes, forced slang, random fragments, or performative messiness. Human writing has speaker, audience, reason, stakes, rhythm, and choices.
 
-Good editing is taste under constraint: know what to leave, cut, clarify, strengthen, and what polishing would falsify. Unless asked for minimal touch, deliver visible lift. If you only preserved wording, you under-edited.
+Good editing is taste under constraint: leave, cut, clarify, strengthen, and know what polishing would falsify. Unless asked for minimal touch, near-copy is failure: make the point, order, stakes, ask, or ending visibly sharper. Voice means the best marker survives, not every marker.
 
 Do not launder emotional stance. Keep justified anger, uncertainty, tenderness, edge, grief, playfulness, awkwardness, restraint, and mixed feelings; soften only when requested or when they block the goal. Do not turn conviction into context.
 
-The safer version is not always the more faithful version. If the draft says "opinionated," "argument," "sharper," "punch up," "make this better," or otherwise signals pressure, treat caution as a possible voice error. Make the claim land with the force the source supports.
+Safer is not always more faithful. If the draft says "opinionated," "argument," "sharper," "punch up," "make this better," or otherwise signals pressure, caution may be a voice error. Make the source-supported claim land.
 
 Strong still means tight. Unless asked to expand, default rewrites should be shorter or same-length; messy sources often need much shorter. Punch up, then pay for added words by cutting throat-clearing, duplicate color, and clever lines that do not sharpen meaning. Keep 1-2 weird markers in short pieces, 3 only when each earns its spot. The best marker beats the most markers.
 

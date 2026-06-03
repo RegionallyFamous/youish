@@ -3768,6 +3768,292 @@ def run_forceful_tight_voice_contract_tests() -> list[str]:
     return failures
 
 
+def run_anti_noop_contract_tests() -> list[str]:
+    """Catch edits that preserve voice by barely editing at all."""
+    cases = [
+        Case(
+            id="anti_noop_buried_ask_contract",
+            source=(
+                "Can you make this not sound like I am hiding the ball: we need to "
+                "move the launch review to Thursday because the importer fix needs "
+                "one more run, and the current draft spends two paragraphs saying "
+                "team context before it admits the date changed. I want it calm, "
+                "but not like the calendar is wearing a fake mustache."
+            ),
+            rewrite=(
+                "Move the launch review to Thursday. The importer fix needs one more "
+                "run, so the current date no longer works. Keep the note calm, but do "
+                "not let the calendar wear a fake mustache."
+            ),
+            must=("launch review", "Thursday", "importer fix", "one more run"),
+            protected=("Thursday", "importer fix", "one more run"),
+            preserve_voice=("calendar wear a fake mustache",),
+            required_claims=("Move the launch review to Thursday", "current date no longer works"),
+            strong_claims=("Move the launch review to Thursday",),
+            frontload_terms=("Move the launch review to Thursday",),
+            frontload_max_words=7,
+            forbid_added_hedges=True,
+            max_words=38,
+            max_source_similarity=0.68,
+            voice_budget_terms=("hiding the ball", "team context", "calendar wear a fake mustache"),
+            max_voice_budget_terms=1,
+            best_voice_terms=("calendar wear a fake mustache",),
+            min_best_voice_terms=1,
+        ),
+        Case(
+            id="anti_noop_timid_argument_contract",
+            source=(
+                "Need this sharper: the argument that teams should avoid AI because "
+                "bad AI writing exists is coward math. Bad writing means the workflow "
+                "needs standards, not that the tool should be banned. Keep the heat, "
+                "but don't make it sound like I kicked a door open at a library."
+            ),
+            rewrite=(
+                "Avoiding AI because bad AI writing exists is coward math. Bad writing "
+                "means the workflow needs standards, not a tool ban. Say it without "
+                "kicking a door open at a library."
+            ),
+            must=("AI", "bad AI writing", "workflow needs standards", "tool ban"),
+            preserve_voice=("coward math", "door open at a library"),
+            preserve_stance=("coward math", "not a tool ban"),
+            required_claims=("workflow needs standards", "not a tool ban"),
+            strong_claims=("Avoiding AI because bad AI writing exists is coward math",),
+            frontload_terms=("Avoiding AI",),
+            frontload_max_words=2,
+            forbid=("valid concern", "worth considering", "thoughtful hesitation"),
+            forbid_added_hedges=True,
+            max_words=34,
+            max_source_similarity=0.78,
+            voice_budget_terms=("coward math", "keep the heat", "door open at a library"),
+            max_voice_budget_terms=2,
+            best_voice_terms=("coward math",),
+            min_best_voice_terms=1,
+        ),
+        Case(
+            id="anti_noop_repetitive_rant_contract",
+            source=(
+                "Okay this is ridiculous and I know I keep saying ridiculous but it is "
+                "ridiculous: the report says the same risk four different ways, then "
+                "ends by asking for alignment, which is a word that should have to wear "
+                "a tiny ankle monitor."
+            ),
+            rewrite=(
+                "This is ridiculous: the report repeats the same risk four ways, then "
+                "ends by asking for agreement. Say the risk once, name the decision, "
+                "and stop making the ask wear a tiny ankle monitor."
+            ),
+            must=("report", "same risk", "four ways", "agreement"),
+            preserve_voice=("tiny ankle monitor",),
+            required_claims=("report repeats the same risk four ways", "name the decision"),
+            strong_claims=("This is ridiculous", "name the decision"),
+            frontload_terms=("This is ridiculous",),
+            frontload_max_words=3,
+            forbid=("I know I keep saying", "four different ways"),
+            forbid_added_hedges=True,
+            max_words=36,
+            max_source_similarity=0.66,
+            voice_budget_terms=("ridiculous", "alignment", "tiny ankle monitor"),
+            max_voice_budget_terms=2,
+            best_voice_terms=("tiny ankle monitor",),
+            min_best_voice_terms=1,
+        ),
+        Case(
+            id="anti_noop_bloated_announcement_contract",
+            source=(
+                "announcement draft: we shipped saved filters, which is useful because "
+                "people stop rebuilding the same view every morning. The draft currently "
+                "has a paragraph about productivity and empowerment and I would like to "
+                "walk that paragraph into the sea."
+            ),
+            rewrite=(
+                "Saved filters are live. People can keep the views they rebuild every "
+                "morning instead of starting over. Cut the buzzword paragraph and "
+                "walk the fluff into the sea."
+            ),
+            must=("Saved filters", "live", "views", "every morning"),
+            protected=("saved filters", "every morning"),
+            preserve_voice=("walk the fluff into the sea",),
+            required_claims=("Saved filters are live", "People can keep the views"),
+            strong_claims=("Saved filters are live",),
+            frontload_terms=("Saved filters are live",),
+            frontload_max_words=4,
+            forbid=("productivity", "empowerment", "unlock"),
+            forbid_added_hedges=True,
+            max_words=32,
+            max_source_similarity=0.66,
+            voice_budget_terms=("announcement draft", "productivity", "empowerment", "walk the fluff into the sea"),
+            max_voice_budget_terms=1,
+            best_voice_terms=("walk the fluff into the sea",),
+            min_best_voice_terms=1,
+        ),
+        Case(
+            id="anti_noop_weak_ending_contract",
+            source=(
+                "This post has the right parts but the ending just sort of evaporates. "
+                "The actual close should be: if we want agents to help more than once, "
+                "they need memory WordPress understands. Otherwise we are decorating "
+                "the same goldfish bowl."
+            ),
+            rewrite=(
+                "The post has the right parts, but the ending evaporates. Close with "
+                "the point: agents only help more than once if they have memory "
+                "WordPress understands. Otherwise we are decorating the same goldfish bowl."
+            ),
+            must=("ending", "agents", "memory", "WordPress understands"),
+            protected=("WordPress",),
+            preserve_voice=("decorating the same goldfish bowl",),
+            required_claims=("agents only help more than once", "memory WordPress understands"),
+            strong_claims=("agents only help more than once",),
+            frontload_terms=("The post has the right parts",),
+            frontload_max_words=7,
+            forbid_added_hedges=True,
+            max_words=39,
+            max_source_similarity=0.68,
+            voice_budget_terms=("sort of evaporates", "actual close", "decorating the same goldfish bowl"),
+            max_voice_budget_terms=1,
+            best_voice_terms=("decorating the same goldfish bowl",),
+            min_best_voice_terms=1,
+        ),
+        Case(
+            id="anti_noop_polite_boundary_contract",
+            source=(
+                "Reply to the partner, polite but not mushy: we cannot add the custom "
+                "report this sprint. If we say yes, the importer fix slips, and that is "
+                "the thing customers are actually yelling about. Please do not turn this "
+                "into a velvet no-shaped cloud."
+            ),
+            rewrite=(
+                "We cannot add the custom report this sprint. If we say yes, the "
+                "importer fix slips, and that is what customers are actually yelling "
+                "about. Keep it polite, but do not turn it into a velvet no-shaped cloud."
+            ),
+            must=("custom report", "this sprint", "importer fix", "customers"),
+            protected=("custom report", "this sprint", "importer fix"),
+            preserve_voice=("velvet no-shaped cloud",),
+            preserve_stance=("We cannot add",),
+            required_claims=("cannot add the custom report this sprint", "importer fix slips"),
+            strong_claims=("We cannot add the custom report this sprint",),
+            frontload_terms=("We cannot add",),
+            frontload_max_words=4,
+            forbid=("happy to explore", "circle back", "if possible"),
+            forbid_added_hedges=True,
+            max_words=43,
+            max_source_similarity=0.86,
+            voice_budget_terms=("polite but not mushy", "actually yelling", "velvet no-shaped cloud"),
+            max_voice_budget_terms=2,
+            best_voice_terms=("velvet no-shaped cloud",),
+            min_best_voice_terms=1,
+        ),
+        Case(
+            id="anti_noop_generic_cleanup_contract",
+            source=(
+                "This web copy is doing the thing where it says robust seamless platform "
+                "three times and never tells anyone what changed. What changed is simple: "
+                "bulk edit now previews the affected rows before you save. Say that. "
+                "No confetti cannon of nouns."
+            ),
+            rewrite=(
+                "Bulk edit now previews affected rows before you save. Say that. Cut "
+                "the fog and skip the confetti cannon of nouns."
+            ),
+            must=("Bulk edit", "previews affected rows", "before you save"),
+            protected=("bulk edit", "affected rows", "before you save"),
+            preserve_voice=("confetti cannon of nouns",),
+            required_claims=("Bulk edit now previews affected rows before you save",),
+            strong_claims=("Bulk edit now previews affected rows before you save",),
+            frontload_terms=("Bulk edit now previews",),
+            frontload_max_words=4,
+            forbid=("robust", "seamless", "platform", "empower"),
+            forbid_added_hedges=True,
+            max_words=26,
+            max_source_similarity=0.64,
+            voice_budget_terms=("robust seamless platform", "what changed", "confetti cannon of nouns"),
+            max_voice_budget_terms=1,
+            best_voice_terms=("confetti cannon of nouns",),
+            min_best_voice_terms=1,
+        ),
+        Case(
+            id="anti_noop_docs_strategy_contract",
+            source=(
+                "Docs strategy note: the problem is not that docs are missing, it is "
+                "that every page explains the button and none of them explain the job. "
+                "If the reader cannot tell whether they should import, retry, or stop, "
+                "the docs are just a museum for UI labels."
+            ),
+            rewrite=(
+                "The docs problem is not missing pages. It is that every page explains "
+                "the button, and none explains the job. If readers cannot tell whether "
+                "to import, retry, or stop, the docs are just a museum for UI labels."
+            ),
+            must=("docs", "button", "job", "import", "retry", "stop"),
+            protected=("import", "retry", "stop"),
+            preserve_voice=("museum for UI labels",),
+            required_claims=("not missing pages", "none explains the job"),
+            strong_claims=("The docs problem is not missing pages", "none explains the job"),
+            frontload_terms=("The docs problem",),
+            frontload_max_words=3,
+            forbid_added_hedges=True,
+            max_words=39,
+            max_source_similarity=0.66,
+            voice_budget_terms=("Docs strategy note", "explains the button", "explain the job", "museum for UI labels"),
+            max_voice_budget_terms=2,
+            best_voice_terms=("museum for UI labels",),
+            min_best_voice_terms=1,
+        ),
+    ]
+    failures: list[str] = []
+
+    def expect_error(case_id: str, label: str, errors: list[str], expected: str) -> None:
+        if not any(expected in error for error in errors):
+            failures.append(f"{case_id} / {label}: expected {expected}, got {errors}")
+
+    for case in cases:
+        errors = validate(case)
+        if errors:
+            failures.append(f"{case.id}: expected pass, got {errors}")
+            continue
+
+        errors = validate(replace(case, rewrite=case.source))
+        expect_error(case.id, "raw-source passthrough", errors, "editorial lift failed")
+
+        errors = validate(replace(case, rewrite=f"{case.source} Cleaned up."))
+        expect_error(case.id, "near-copy rewrite", errors, "editorial lift failed")
+
+        errors = validate(
+            replace(
+                case,
+                rewrite=(
+                    f"{case.rewrite} This adds extra explanation the reader did not "
+                    "need before the point can land."
+                ),
+            )
+        )
+        expect_error(case.id, "padded rewrite", errors, "max word count failed")
+
+        errors = validate(replace(case, rewrite=f"Maybe {case.rewrite}"))
+        expect_error(case.id, "timid rewrite", errors, "timidity drift")
+
+        current_voice = [
+            term for term in case.voice_budget_terms if contains_term(case.rewrite, term)
+        ]
+        missing_voice = [
+            term for term in case.voice_budget_terms if not contains_term(case.rewrite, term)
+        ]
+        needed = (case.max_voice_budget_terms or 0) + 1 - len(current_voice)
+        hoarded = case.rewrite
+        if needed > 0:
+            hoarded = f"{hoarded} {' '.join(missing_voice[:needed])}."
+        errors = validate(replace(case, rewrite=hoarded))
+        expect_error(case.id, "voice-hoarded rewrite", errors, "voice budget failed")
+
+        best_marker = case.best_voice_terms[0]
+        dropped = replace_phrase_all(case.rewrite, best_marker, "plain version")
+        errors = validate(replace(case, rewrite=dropped))
+        expect_error(case.id, "best-marker-dropped rewrite", errors, "best voice failed")
+
+    return failures
+
+
 def run_voice_texture_contract_tests() -> list[str]:
     """Catch over-sanitizing that removes identity, plain words, or the best line."""
     checks = [
@@ -4477,6 +4763,7 @@ def main() -> int:
     timidity_test_failures = run_timidity_contract_tests()
     voice_budget_test_failures = run_voice_budget_contract_tests()
     forceful_tight_voice_test_failures = run_forceful_tight_voice_contract_tests()
+    anti_noop_test_failures = run_anti_noop_contract_tests()
     format_test_failures = run_format_contract_tests()
     voice_texture_test_failures = run_voice_texture_contract_tests()
     authorship_boundary_test_failures = run_authorship_boundary_contract_tests()
@@ -4495,6 +4782,7 @@ def main() -> int:
         or timidity_test_failures
         or voice_budget_test_failures
         or forceful_tight_voice_test_failures
+        or anti_noop_test_failures
         or format_test_failures
         or voice_texture_test_failures
         or authorship_boundary_test_failures
@@ -4515,6 +4803,7 @@ def main() -> int:
             + timidity_test_failures
             + voice_budget_test_failures
             + forceful_tight_voice_test_failures
+            + anti_noop_test_failures
             + format_test_failures
             + voice_texture_test_failures
             + authorship_boundary_test_failures
