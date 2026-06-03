@@ -1414,6 +1414,7 @@ def make_cases() -> list[Case]:
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            max_words=28,
             starts_with="We fixed",
             voice_budget_terms=("too long", "says nothing", "haunted changelog"),
             max_voice_budget_terms=1,
@@ -1445,6 +1446,7 @@ def make_cases() -> list[Case]:
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            max_words=28,
             preserve_stance=("Friday will not work", "Monday is realistic"),
             voice_budget_terms=("door closing", "Friday is fake", "spreadsheet weather"),
             max_voice_budget_terms=1,
@@ -1480,6 +1482,7 @@ def make_cases() -> list[Case]:
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            max_words=34,
             prompt_mode="source_only",
         ),
         Case(
@@ -1526,7 +1529,7 @@ def make_cases() -> list[Case]:
             required_claims=("orders need attention first", "No AI magic", "No command center nonsense"),
             forbid_assertions=("is AI magic", "command center solution"),
             forbid_added_entities=True,
-            allow_expand=True,
+            max_words=28,
             ordered_terms=("small store owners", "orders need attention", "on fire"),
             forbid_artifacts=("homepage blob", "maybe"),
             max_question_marks=0,
@@ -1561,6 +1564,7 @@ def make_cases() -> list[Case]:
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            max_words=32,
             prompt_mode="source_only",
         ),
         Case(
@@ -1591,6 +1595,7 @@ def make_cases() -> list[Case]:
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            max_words=40,
             prompt_mode="source_only",
         ),
         Case(
@@ -1617,6 +1622,7 @@ def make_cases() -> list[Case]:
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            max_words=26,
             voice_budget_terms=("vibes", "glitter cannon"),
             max_voice_budget_terms=1,
             prompt_mode="source_only",
@@ -1642,6 +1648,7 @@ def make_cases() -> list[Case]:
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            max_words=25,
             voice_budget_terms=("small on purpose", "incapable", "floorboards squeak", "hear the squeak"),
             max_voice_budget_terms=2,
             prompt_mode="source_only",
@@ -1692,7 +1699,7 @@ def make_cases() -> list[Case]:
             frontload_max_words=10,
             forbid_added_hedges=True,
             max_source_similarity=0.70,
-            max_words=95,
+            max_words=88,
             ordered_terms=("7.1 planning post", "memory", "belongs in core", "wp_guideline"),
             forbid_artifacts=("ok", "keep it punchy"),
             max_question_marks=0,
@@ -2819,6 +2826,43 @@ def run_thought_dump_contract_tests() -> list[str]:
         forbid_wrappers=True,
         prompt_mode="source_only",
     )
+    single_best_marker = Case(
+        id="thought_dump_single_best_marker_contract",
+        source=(
+            "team update is flabby. deploy moves to Tuesday because billing smoke "
+            "tests failed. Nina owns the customer note. weird bits available: billing "
+            "soup, Tuesday wearing a helmet, spreadsheet thunder, launch note ate a "
+            "shoe. keep the one that helps and stop making the sentence parade bigger."
+        ),
+        rewrite=(
+            "Deploy moves to Tuesday because billing smoke tests failed. Nina owns "
+            "the customer note. Keep it calm; we do not need spreadsheet thunder."
+        ),
+        must=("deploy moves to Tuesday", "billing smoke tests", "Nina", "customer note"),
+        protected=("Tuesday", "billing smoke tests", "Nina"),
+        preserve_voice=("spreadsheet thunder",),
+        required_claims=("deploy moves to Tuesday", "Nina owns the customer note"),
+        reader_actions=("Nina owns the customer note",),
+        forbid_assertions=("deploy stays on schedule", "billing smoke tests passed"),
+        voice_budget_terms=(
+            "billing soup",
+            "Tuesday wearing a helmet",
+            "spreadsheet thunder",
+            "launch note ate a shoe",
+            "sentence parade",
+        ),
+        max_voice_budget_terms=1,
+        best_voice_terms=("spreadsheet thunder",),
+        min_best_voice_terms=1,
+        forbid=("billing soup", "Tuesday wearing a helmet", "launch note ate a shoe"),
+        forbid_artifacts=("team update is flabby", "weird bits available"),
+        max_words=26,
+        max_paragraphs=1,
+        max_source_similarity=0.65,
+        forbid_clarifying=True,
+        forbid_wrappers=True,
+        prompt_mode="source_only",
+    )
     checks = [
         ("self-correction honored", self_correction, None),
         (
@@ -2867,6 +2911,30 @@ def run_thought_dump_contract_tests() -> list[str]:
                 ),
             ),
             "voice budget failed",
+        ),
+        ("single best marker honored", single_best_marker, None),
+        (
+            "single best marker becomes voice sticker",
+            replace(
+                single_best_marker,
+                rewrite=(
+                    "Deploy moves to Tuesday because billing smoke tests failed. "
+                    "The customer note should avoid spreadsheet thunder."
+                ),
+            ),
+            "missing required claims",
+        ),
+        (
+            "single best marker picks weaker decoration",
+            replace(
+                single_best_marker,
+                rewrite=(
+                    "Deploy moves to Tuesday because billing smoke tests failed. "
+                    "Nina owns the customer note. Keep it calm; we do not need "
+                    "Tuesday wearing a helmet."
+                ),
+            ),
+            "best voice failed",
         ),
     ]
     failures: list[str] = []
@@ -4349,6 +4417,14 @@ def run_mutation_tests() -> list[str]:
                 rewrite = f"{case.rewrite} {' '.join(missing[:needed])}."
                 errors = validate(replace(case, rewrite=rewrite))
                 expect_error(case.id, "overstuffed voice budget", errors, "voice budget failed")
+
+        if case.max_words is not None:
+            rewrite = (
+                f"{case.rewrite} This adds extra explanation the reader did not "
+                "need here today."
+            )
+            errors = validate(replace(case, rewrite=rewrite))
+            expect_error(case.id, "padded capped rewrite", errors, "max word count failed")
 
         if case.min_best_voice_terms is not None and case.best_voice_terms:
             best_marker = case.best_voice_terms[0]

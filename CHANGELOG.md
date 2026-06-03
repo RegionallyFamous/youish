@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.12 - 2026-06-03
+
+- Reframe the runtime skill around the new north star: better writing first, concision second, voice preservation inside that standard.
+- Add explicit fail-and-revise gates for rewrites that are voice-faithful but sprawling, softer, same-structured, or only cosmetically cleaner.
+- Tighten rough thought-dump contracts with word caps, a single-best-marker case, a voice-sticker negative, and max-word mutation coverage.
+
 ## 0.3.11 - 2026-06-03
 
 - Add a `skills-cli` install-verifier mode for the public `npx skills add` payload, which omits catalog-only repo metadata.

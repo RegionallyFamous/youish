@@ -7,8 +7,8 @@ import re
 
 
 PLUGIN_NAME = "youish"
-DEFAULT_VERSION = "0.3.11"
-PLUGIN_DESCRIPTION = "Voice-faithful rewrites that keep your claims, stance, and rhythm."
+DEFAULT_VERSION = "0.3.12"
+PLUGIN_DESCRIPTION = "Sharper, tighter rewrites that still sound like you."
 SEMVER_RE = re.compile(
     r"^(0|[1-9]\d*)\."
     r"(0|[1-9]\d*)\."
@@ -58,16 +58,16 @@ def manifest(version: str) -> dict:
         ],
         "interface": {
             "displayName": "Youish",
-            "shortDescription": "Voice-faithful rewrites without factual drift.",
+            "shortDescription": "Sharper rewrites without factual drift.",
             "longDescription": (
-                "Youish rewrites messy drafts, notes, emails, and posts while "
-                "preserving the user's claims, stance, uncertainty, rhythm, "
-                "distinctive phrases, reader action, and constraints."
+                "Youish rewrites messy drafts, notes, emails, and posts into "
+                "better, tighter prose while preserving the user's claims, "
+                "stance, uncertainty, rhythm, reader action, and constraints."
             ),
             "developerName": "Regionally Famous",
             "category": "Productivity",
             "capabilities": [
-                "Voice-preserving rewrites",
+                "Sharp, concise rewrites",
                 "Messy-note cleanup",
                 "Fact and claim protection",
                 "Refuses unsupported details",

@@ -1,7 +1,7 @@
 {
   "name": "youish",
-  "version": "0.3.11",
-  "description": "Voice-faithful rewrites that keep your claims, stance, and rhythm.",
+  "version": "0.3.12",
+  "description": "Sharper, tighter rewrites that still sound like you.",
   "skills": "./skills/",
   "author": {
     "name": "Regionally Famous",
@@ -31,12 +31,12 @@
   ],
   "interface": {
     "displayName": "Youish",
-    "shortDescription": "Voice-faithful rewrites without factual drift.",
-    "longDescription": "Youish rewrites messy drafts, notes, emails, and posts while preserving the user's claims, stance, uncertainty, rhythm, distinctive phrases, reader action, and constraints.",
+    "shortDescription": "Sharper rewrites without factual drift.",
+    "longDescription": "Youish rewrites messy drafts, notes, emails, and posts into better, tighter prose while preserving the user's claims, stance, uncertainty, rhythm, reader action, and constraints.",
     "developerName": "Regionally Famous",
     "category": "Productivity",
     "capabilities": [
-      "Voice-preserving rewrites",
+      "Sharp, concise rewrites",
       "Messy-note cleanup",
       "Fact and claim protection",
       "Refuses unsupported details"
