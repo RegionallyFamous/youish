@@ -151,6 +151,20 @@ MODALITY_DRIFT_MARKERS = [
     "will happen",
 ]
 
+TIMIDITY_HEDGE_MARKERS = [
+    "maybe",
+    "might",
+    "probably",
+    "could",
+    "seems",
+    "appears",
+    "possibly",
+    "may be worth",
+    "worth considering",
+    "if appropriate",
+    "consider",
+]
+
 CAUSALITY_DRIFT_MARKERS = [
     "root cause",
     "caused by",
@@ -209,6 +223,10 @@ class Case:
     polarity_sensitive: tuple[str, ...] = field(default_factory=tuple)
     min_avg_sentence_words: float | None = None
     max_source_similarity: float | None = None
+    strong_claims: tuple[str, ...] = field(default_factory=tuple)
+    frontload_terms: tuple[str, ...] = field(default_factory=tuple)
+    frontload_max_words: int | None = None
+    forbid_added_hedges: bool = False
 
 
 def words(text: str) -> list[str]:
@@ -590,6 +608,25 @@ def validate(case: Case) -> list[str]:
     if missing_claims:
         errors.append(f"missing required claims: {missing_claims}")
 
+    missing_strong_claims = [
+        claim for claim in case.strong_claims if not contains_term(case.rewrite, claim)
+    ]
+    if missing_strong_claims:
+        errors.append(
+            f"missing strongest source-supported claims: {missing_strong_claims}"
+        )
+
+    if case.frontload_terms and case.frontload_max_words is not None:
+        frontload_text = " ".join(words(case.rewrite)[:case.frontload_max_words])
+        missing_frontload = [
+            term for term in case.frontload_terms if not contains_term(frontload_text, term)
+        ]
+        if missing_frontload:
+            errors.append(
+                "buried thesis: expected frontload terms in first "
+                f"{case.frontload_max_words} words: {missing_frontload}"
+            )
+
     missing_reader_actions = [
         action for action in case.reader_actions if not contains_term(case.rewrite, action)
     ]
@@ -684,6 +721,17 @@ def validate(case: Case) -> list[str]:
         )
         if not any(contains_term(case.rewrite, marker) for marker in uncertainty_markers):
             errors.append("lost uncertainty marker")
+
+    if case.forbid_added_hedges:
+        unsupported_hedges = [
+            marker
+            for marker in TIMIDITY_HEDGE_MARKERS
+            if contains_term(unquoted, marker) and not contains_term(case.source, marker)
+        ]
+        if unsupported_hedges:
+            errors.append(
+                f"timidity drift: unsupported hedge markers appeared: {unsupported_hedges}"
+            )
 
     causal_drift = [
         term
@@ -973,6 +1021,11 @@ def make_cases() -> list[Case]:
                 must=(meeting, old, new, "not ready"),
                 protected=(meeting, old, new),
                 forbid=("potentially", "possibility", "reach out"),
+                strong_claims=(f"Could we move the {meeting}",),
+                frontload_terms=("Could we move",),
+                frontload_max_words=4,
+                forbid_added_hedges=True,
+                max_source_similarity=0.72,
             )
         )
 
@@ -1821,6 +1874,40 @@ def run_validator_self_tests() -> list[str]:
                 max_source_similarity=0.7,
             ),
             "editorial lift failed",
+        ),
+        (
+            "strongest claim",
+            Case(
+                "self_strongest_claim",
+                "This is not a cleanup; it is an ownership problem.",
+                "This could be a cleanup with some ownership questions.",
+                must=("ownership",),
+                strong_claims=("not a cleanup", "ownership problem"),
+            ),
+            "missing strongest source-supported claims",
+        ),
+        (
+            "buried thesis",
+            Case(
+                "self_buried_thesis",
+                "Lead with the point: no more review.",
+                "After some background, no more review.",
+                must=("no more review",),
+                frontload_terms=("no more review",),
+                frontload_max_words=4,
+            ),
+            "buried thesis",
+        ),
+        (
+            "timidity hedge",
+            Case(
+                "self_timidity_hedge",
+                "Do not add another review pass.",
+                "We could consider not adding another review pass.",
+                must=("review pass",),
+                forbid_added_hedges=True,
+            ),
+            "timidity drift",
         ),
         (
             "opening",
@@ -2908,21 +2995,23 @@ def run_editorial_lift_contract_tests() -> list[str]:
         rewrite=(
             "In WordPress Core AI: 7.1 Planning and Beyond, I described Guidelines as "
             "one workstream for WordPress 7.1 and the next phase of Core AI. What I "
-            "did not do there was make the stronger case for why Guidelines matters "
-            "more than it looks.\n\n"
-            "Radical Speed Month gave me the chance to make that case with "
-            "@arturpiszek, under the thesis that Agent Memory is the real moat.\n\n"
+            "did not do there was make the stronger personal case: Guidelines matters "
+            "because Agent Memory is the real moat.\n\n"
+            "Radical Speed Month gave me the chance to make that case alongside "
+            "@arturpiszek.\n\n"
             "This is the opinionated version.\n\n"
-            "Guidelines is not just an editorial-preferences bucket. It is the first "
-            "real step toward a WordPress-native persistence layer for agents: "
+            "Guidelines is not an editorial-preferences bucket. It is the first real "
+            "step toward a WordPress-native persistence layer for agents: "
             "memories, skills, artifacts, plans, and other reusable context that "
             "should be discoverable, permissioned, inspectable, and portable.\n\n"
-            "That primitive belongs in WordPress core, not plugin-side glue. If agents "
-            "are going to work across the whole WordPress experience, their memory "
-            "layer needs to be part of the same substrate: durable, inspectable, "
-            "portable, and governed by WordPress permissions.\n\n"
-            "This post explains what I mean by memory, why wp_guideline is the right "
-            "starting point, and how it can grow into a broader persistence layer. "
+            "That belongs in core. Not because every agent feature belongs in core, "
+            "and not because plugins are the wrong place to experiment, but because "
+            "memory is different. If agents are going to act across WordPress, their "
+            "memory cannot be scattered across plugin-specific islands. It needs to "
+            "be visible, governable, portable, and shaped by WordPress permissions.\n\n"
+            "That is what makes wp_guideline interesting. It can start as a place for "
+            "editorial guidance, but it should not stop there. It can become the first "
+            "primitive for persistent agent context in WordPress.\n\n"
             "The technical groundwork is already in progress in Gutenberg PR #78296, "
             "currently at the access-refinement stage, with the larger vision tracked "
             "in issue #77230."
@@ -2940,12 +3029,13 @@ def run_editorial_lift_contract_tests() -> list[str]:
         protected=("WordPress 7.1", "@arturpiszek", "wp_guideline", "#78296", "#77230"),
         preserve_voice=("the real moat", "opinionated"),
         required_claims=(
-            "Guidelines matters more than it looks",
-            "primitive belongs in WordPress core",
-            "memory layer needs to be part of the same substrate",
+            "Guidelines matters because Agent Memory is the real moat",
+            "That belongs in core",
+            "memory cannot be scattered across plugin-specific islands",
+            "first primitive for persistent agent context",
         ),
-        ordered_terms=("WordPress Core AI", "Radical Speed Month", "WordPress-native persistence layer", "plugin-side glue", "#78296"),
-        max_source_similarity=0.65,
+        ordered_terms=("WordPress Core AI", "Radical Speed Month", "WordPress-native persistence layer", "That belongs in core", "wp_guideline", "#78296"),
+        max_source_similarity=0.6,
     )
     buried_update = Case(
         id="editorial_lift_buried_update_contract",
@@ -2993,8 +3083,60 @@ def run_editorial_lift_contract_tests() -> list[str]:
         required_claims=("answer was to avoid AI entirely", "workflow needs standards"),
         max_source_similarity=0.6,
     )
+    source_supported_boldness = Case(
+        id="editorial_lift_source_supported_boldness_contract",
+        source=(
+            "Need this to stop sounding so careful: Guidelines is not one polite "
+            "workstream among many; it is the substrate for agent memory. Plugins "
+            "should absolutely experiment, but the memory layer itself belongs in "
+            "core because it needs portability, inspection, and WordPress permissions."
+        ),
+        rewrite=(
+            "Guidelines is not one polite workstream among many. It is the substrate "
+            "for agent memory.\n\n"
+            "Plugins should absolutely experiment. But the memory layer itself "
+            "belongs in core because it needs portability, inspection, and WordPress "
+            "permissions."
+        ),
+        must=("Guidelines", "substrate for agent memory", "Plugins should absolutely experiment"),
+        preserve_voice=("polite workstream among many",),
+        required_claims=(
+            "not one polite workstream among many",
+            "memory layer itself belongs in core",
+        ),
+        forbid=("could become", "may eventually", "worth considering"),
+        starts_with="Guidelines is not one polite workstream",
+        max_source_similarity=0.68,
+    )
+    timid_wordpress_rewrite = (
+        "In WordPress Core AI: 7.1 Planning and Beyond, I described Guidelines as "
+        "one workstream for WordPress 7.1 and the next phase of Core AI. What I "
+        "did not do there was make the stronger case for why Guidelines matters "
+        "more than it looks.\n\n"
+        "Radical Speed Month gave me the chance to make that case with "
+        "@arturpiszek, under the thesis that Agent Memory is the real moat.\n\n"
+        "This is the opinionated version.\n\n"
+        "Guidelines is not just an editorial-preferences bucket. It is the first "
+        "real step toward a WordPress-native persistence layer for agents: memories, "
+        "skills, artifacts, plans, and other reusable context that should be "
+        "discoverable, permissioned, inspectable, and portable.\n\n"
+        "That primitive belongs in WordPress core, not plugin-side glue. If agents "
+        "are going to work across the whole WordPress experience, their memory layer "
+        "needs to be part of the same substrate: durable, inspectable, portable, and "
+        "governed by WordPress permissions.\n\n"
+        "This post explains what I mean by memory, why wp_guideline is the right "
+        "starting point, and how it can grow into a broader persistence layer. The "
+        "technical groundwork is already in progress in Gutenberg PR #78296, "
+        "currently at the access-refinement stage, with the larger vision tracked "
+        "in issue #77230."
+    )
     checks = [
         ("WordPress argument lifted", wordpress_memory, None),
+        (
+            "WordPress argument too timid",
+            replace(wordpress_memory, rewrite=timid_wordpress_rewrite),
+            "missing required claims",
+        ),
         (
             "WordPress argument barely touched",
             replace(wordpress_memory, rewrite=wordpress_memory.source),
@@ -3011,6 +3153,95 @@ def run_editorial_lift_contract_tests() -> list[str]:
             "AI argument barely touched",
             replace(ai_argument, rewrite=ai_argument.source),
             "editorial lift failed",
+        ),
+        ("source-supported boldness lifted", source_supported_boldness, None),
+        (
+            "source-supported boldness hedged",
+            replace(
+                source_supported_boldness,
+                rewrite=(
+                    "Guidelines could become an important workstream for agent memory. "
+                    "Plugins may eventually be a place to experiment, but core may be "
+                    "worth considering because portability, inspection, and WordPress "
+                    "permissions matter."
+                ),
+            ),
+            "missing required claims",
+        ),
+    ]
+    failures: list[str] = []
+    for name, case, expected in checks:
+        errors = validate(case)
+        if expected is None and errors:
+            failures.append(f"{name}: expected pass, got {errors}")
+        elif expected is not None and not any(expected in error for error in errors):
+            failures.append(f"{name}: expected {expected}, got {errors}")
+    return failures
+
+
+def run_timidity_contract_tests() -> list[str]:
+    """Catch rewrites that preserve facts while weakening source-supported force."""
+    tracking_pixel = Case(
+        id="timidity_tracking_pixel_contract",
+        source=(
+            "Make this stronger: We are not adding another tracking pixel. The issue "
+            "is not data; it is trust. If we cannot explain why we need it, we should "
+            "not ship it."
+        ),
+        rewrite=(
+            "We are not adding another tracking pixel. The issue is trust, not data. "
+            "If we cannot explain why we need it, we should not ship it."
+        ),
+        must=("tracking pixel", "trust", "should not ship it"),
+        strong_claims=("We are not adding another tracking pixel", "issue is trust"),
+        frontload_terms=("We are not adding another tracking pixel",),
+        frontload_max_words=8,
+        forbid_added_hedges=True,
+    )
+    renewal_flow = Case(
+        id="timidity_frontloaded_stakes_contract",
+        source=(
+            "Need this not buried: The renewal flow is making the new plan look "
+            "expensive before users see value. Every extra question before pricing "
+            "is costing us trust."
+        ),
+        rewrite=(
+            "The renewal flow is making the new plan look expensive before users see "
+            "value. Every extra question before pricing is costing us trust."
+        ),
+        must=("renewal flow", "new plan", "expensive", "trust"),
+        strong_claims=("new plan look expensive", "costing us trust"),
+        frontload_terms=("renewal flow is making the new plan look expensive",),
+        frontload_max_words=12,
+        forbid_added_hedges=True,
+    )
+    checks = [
+        ("tracking pixel direct", tracking_pixel, None),
+        (
+            "tracking pixel hedged",
+            replace(
+                tracking_pixel,
+                rewrite=(
+                    "We should probably avoid adding another tracking pixel for now. "
+                    "The issue may be trust as much as data, so if appropriate, we "
+                    "should consider whether we can explain why we need it."
+                ),
+            ),
+            "timidity drift",
+        ),
+        ("renewal flow frontloaded", renewal_flow, None),
+        (
+            "renewal flow buried",
+            replace(
+                renewal_flow,
+                rewrite=(
+                    "The team has been looking at pricing, setup effort, and the "
+                    "questions users answer before they see value. The renewal flow "
+                    "is making the new plan look expensive, and every extra question "
+                    "before pricing is costing us trust."
+                ),
+            ),
+            "buried thesis",
         ),
     ]
     failures: list[str] = []
@@ -3641,6 +3872,25 @@ def run_mutation_tests() -> list[str]:
             errors = validate(replace(case, rewrite=case.source))
             expect_error(case.id, "under-edited passthrough", errors, "editorial lift failed")
 
+        if case.strong_claims:
+            errors = validate(replace(case, rewrite=case.source))
+            expect_error(
+                case.id,
+                "lost strongest source-supported claim",
+                errors,
+                "missing strongest source-supported claims",
+            )
+
+        if case.frontload_terms and case.frontload_max_words is not None:
+            rewrite = f"First, a little background before the actual point. {case.rewrite}"
+            errors = validate(replace(case, rewrite=rewrite))
+            expect_error(case.id, "buried frontloaded thesis", errors, "buried thesis")
+
+        if case.forbid_added_hedges:
+            rewrite = f"Possibly, {case.rewrite}"
+            errors = validate(replace(case, rewrite=rewrite))
+            expect_error(case.id, "added unsupported hedge", errors, "timidity drift")
+
         if any(contains_term(case.source, term) for term in ("maybe", "may", "might", "probably")):
             rewrite = f"{case.rewrite} This definitely will happen."
             errors = validate(replace(case, rewrite=rewrite))
@@ -3682,6 +3932,7 @@ def main() -> int:
     thought_dump_test_failures = run_thought_dump_contract_tests()
     source_only_artifact_test_failures = run_source_only_artifact_contract_tests()
     editorial_lift_test_failures = run_editorial_lift_contract_tests()
+    timidity_test_failures = run_timidity_contract_tests()
     format_test_failures = run_format_contract_tests()
     voice_texture_test_failures = run_voice_texture_contract_tests()
     authorship_boundary_test_failures = run_authorship_boundary_contract_tests()
@@ -3697,6 +3948,7 @@ def main() -> int:
         or thought_dump_test_failures
         or source_only_artifact_test_failures
         or editorial_lift_test_failures
+        or timidity_test_failures
         or format_test_failures
         or voice_texture_test_failures
         or authorship_boundary_test_failures
@@ -3714,6 +3966,7 @@ def main() -> int:
             + thought_dump_test_failures
             + source_only_artifact_test_failures
             + editorial_lift_test_failures
+            + timidity_test_failures
             + format_test_failures
             + voice_texture_test_failures
             + authorship_boundary_test_failures

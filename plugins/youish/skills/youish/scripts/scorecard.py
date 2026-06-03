@@ -31,6 +31,7 @@ from regression_100 import (
     run_profile_contract_tests,
     run_reader_action_contract_tests,
     run_source_only_artifact_contract_tests,
+    run_timidity_contract_tests,
     run_thought_dump_contract_tests,
     run_validator_self_tests,
     run_voice_texture_contract_tests,
@@ -39,7 +40,7 @@ from regression_100 import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL_WORD_LIMIT = 1900
+SKILL_WORD_LIMIT = 2200
 SUITE_NAME = "youish-regression-100"
 SCHEMA_VERSION = "youish.scorecard.v1"
 GuardrailCheck = Callable[[Case], bool]
@@ -51,6 +52,10 @@ GUARDRAILS: tuple[tuple[str, GuardrailCheck], ...] = (
     ("claim_fidelity", lambda case: bool(case.required_claims or case.forbid_assertions)),
     ("reader_action_preservation", lambda case: bool(case.reader_actions)),
     ("editorial_lift", lambda case: case.max_source_similarity is not None),
+    (
+        "timidity_drift",
+        lambda case: bool(case.strong_claims or case.frontload_terms or case.forbid_added_hedges),
+    ),
     ("uncertainty_handling", lambda case: case.preserve_uncertainty),
     ("stance_preservation", lambda case: bool(case.preserve_stance)),
     ("artifact_cleanup", lambda case: bool(case.forbid_artifacts)),
@@ -81,6 +86,12 @@ def run_scorecard_integrity_tests() -> list[str]:
     }
     normalized = normalize_transcript_records([spoofed_pass], cases)
     failures: list[str] = []
+    public_cases = list(cases.values())
+    empty_guardrails = [
+        name for name, check in GUARDRAILS if not any(check(case) for case in public_cases)
+    ]
+    if empty_guardrails:
+        failures.append(f"guardrails without public cases: {empty_guardrails}")
     if normalized[0]["validation_source"] != "recomputed_output":
         failures.append(
             "spoofed transcript: expected validation_source recomputed_output, "
@@ -142,6 +153,7 @@ CONTRACT_CHECKS = (
     ("thought_dump_contracts", run_thought_dump_contract_tests),
     ("source_only_artifact_contracts", run_source_only_artifact_contract_tests),
     ("editorial_lift_contracts", run_editorial_lift_contract_tests),
+    ("timidity_contracts", run_timidity_contract_tests),
     ("format_contracts", run_format_contract_tests),
     ("voice_texture_contracts", run_voice_texture_contract_tests),
     ("authorship_boundary_contracts", run_authorship_boundary_contract_tests),

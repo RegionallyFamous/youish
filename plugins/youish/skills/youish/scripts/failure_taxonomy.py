@@ -25,6 +25,9 @@ RULES = (
     ("causality_drift", "causality_drift", ("causality drift markers",)),
     ("generic_ai_marker", "generic_ai_tell", ("generic markers appeared",)),
     ("editorial_lift_failed", "under_editing", ("editorial lift failed",)),
+    ("missing_strongest_claim", "timidity_drift", ("missing strongest source-supported claims",)),
+    ("buried_thesis", "timidity_drift", ("buried thesis",)),
+    ("unsupported_hedge", "timidity_drift", ("timidity drift",)),
     ("unexpected_note", "wrapper_or_note", ("unexpected note",)),
     ("unexpected_wrapper", "wrapper_or_note", ("unexpected rewrite wrapper",)),
     ("unexpected_markdown_fence", "wrapper_or_note", ("markdown fence",)),
@@ -70,6 +73,11 @@ BUCKET_RULES = (
     ("causality_drift", ("causality drift markers",)),
     ("generic_ai_tell", ("generic markers appeared",)),
     ("under_editing", ("editorial lift failed",)),
+    ("timidity_drift", (
+        "missing strongest source-supported claims",
+        "buried thesis",
+        "timidity drift",
+    )),
     ("wrapper_or_note", ("unexpected note", "unexpected rewrite wrapper", "markdown fence")),
     ("clarifying_question", ("unexpected clarifying question",)),
     ("format_drift", (

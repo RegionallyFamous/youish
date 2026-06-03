@@ -22,7 +22,7 @@ OPENAI_YAML = ROOT / "agents" / "openai.yaml"
 METADATA_JSON = ROOT / "metadata.json"
 INSTALL_SH = ROOT / "install.sh"
 SPEC_SKILL_ROOT = ROOT / "skills" / "youish"
-SKILL_WORD_LIMIT = 1900
+SKILL_WORD_LIMIT = 2200
 SOURCE_REPO_ROOT = (ROOT / "README.md").exists() and SPEC_SKILL_ROOT.exists()
 LOCAL_PATH_MARKERS = (
     "/" + "Users" + "/",

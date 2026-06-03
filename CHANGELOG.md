@@ -4,6 +4,12 @@
 
 Nothing yet.
 
+## 0.3.7 - 2026-06-02
+
+- Raise the runtime skill budget from 1900 to 2200 words so Youish can carry stronger taste guidance without pretending brevity is the only virtue.
+- Tune normal rewrites toward the strongest source-supported claim, especially for opinionated, argumentative, punch-up, and "make this better" requests.
+- Add timidity-drift validation for unsupported hedges, buried theses, and missing strongest source-supported claims.
+
 ## 0.3.6 - 2026-06-02
 
 - Tune normal rewrites toward meaningful editorial lift so voice preservation does not become near-copy under-editing.
