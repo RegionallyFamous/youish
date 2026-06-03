@@ -28,6 +28,7 @@ RULES = (
     ("missing_strongest_claim", "timidity_drift", ("missing strongest source-supported claims",)),
     ("buried_thesis", "timidity_drift", ("buried thesis",)),
     ("unsupported_hedge", "timidity_drift", ("timidity drift",)),
+    ("voice_budget_failed", "over_expansion", ("voice budget failed",)),
     ("unexpected_note", "wrapper_or_note", ("unexpected note",)),
     ("unexpected_wrapper", "wrapper_or_note", ("unexpected rewrite wrapper",)),
     ("unexpected_markdown_fence", "wrapper_or_note", ("markdown fence",)),
@@ -78,6 +79,7 @@ BUCKET_RULES = (
         "buried thesis",
         "timidity drift",
     )),
+    ("over_expansion", ("voice budget failed",)),
     ("wrapper_or_note", ("unexpected note", "unexpected rewrite wrapper", "markdown fence")),
     ("clarifying_question", ("unexpected clarifying question",)),
     ("format_drift", (

@@ -4,6 +4,12 @@
 
 Nothing yet.
 
+## 0.3.8 - 2026-06-02
+
+- Tune shaped rewrites to compress after editorial lift so bolder does not become longer by default.
+- Replace broad "2-3 source markers" guidance with a selective voice rule: keep the strongest marker, then compress again.
+- Add voice-budget validation and public scorecard coverage for texture-rich drafts that should keep the best weird line, not every funny line.
+
 ## 0.3.7 - 2026-06-02
 
 - Raise the runtime skill budget from 1900 to 2200 words so Youish can carry stronger taste guidance without pretending brevity is the only virtue.

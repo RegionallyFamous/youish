@@ -227,6 +227,8 @@ class Case:
     frontload_terms: tuple[str, ...] = field(default_factory=tuple)
     frontload_max_words: int | None = None
     forbid_added_hedges: bool = False
+    voice_budget_terms: tuple[str, ...] = field(default_factory=tuple)
+    max_voice_budget_terms: int | None = None
 
 
 def words(text: str) -> list[str]:
@@ -539,6 +541,17 @@ def validate(case: Case) -> list[str]:
     ]
     if missing_voice:
         errors.append(f"lost voice markers: {missing_voice}")
+
+    if case.max_voice_budget_terms is not None:
+        voice_budget_hits = [
+            term for term in case.voice_budget_terms if contains_term(case.rewrite, term)
+        ]
+        if len(voice_budget_hits) > case.max_voice_budget_terms:
+            errors.append(
+                "voice budget failed: kept "
+                f"{len(voice_budget_hits)} markers, expected at most "
+                f"{case.max_voice_budget_terms}: {voice_budget_hits}"
+            )
 
     missing_stance = [
         term for term in case.preserve_stance if not contains_term(case.rewrite, term)
@@ -1389,6 +1402,8 @@ def make_cases() -> list[Case]:
             forbid_wrappers=True,
             max_paragraphs=1,
             starts_with="We fixed",
+            voice_budget_terms=("too long", "says nothing", "haunted changelog"),
+            max_voice_budget_terms=1,
             prompt_mode="source_only",
         ),
         Case(
@@ -1418,6 +1433,8 @@ def make_cases() -> list[Case]:
             forbid_wrappers=True,
             max_paragraphs=1,
             preserve_stance=("Friday will not work", "Monday is realistic"),
+            voice_budget_terms=("door closing", "Friday is fake", "spreadsheet weather"),
+            max_voice_budget_terms=1,
             prompt_mode="source_only",
         ),
         Case(
@@ -1571,6 +1588,8 @@ def make_cases() -> list[Case]:
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            voice_budget_terms=("vibes", "glitter cannon"),
+            max_voice_budget_terms=1,
             prompt_mode="source_only",
         ),
         Case(
@@ -1581,9 +1600,8 @@ def make_cases() -> list[Case]:
                 "notice when you actually hear the squeak."
             ),
             rewrite=(
-                "We are still small on purpose. Not incapable small. Small enough to hear "
-                "when the floorboards squeak, and close enough to fix what customers actually "
-                "notice."
+                "We are still small on purpose. Small enough to hear when the floorboards "
+                "squeak, and close enough to fix what customers actually notice."
             ),
             must=("small on purpose", "floorboards squeak", "customers"),
             preserve_voice=("floorboards squeak",),
@@ -1595,6 +1613,8 @@ def make_cases() -> list[Case]:
             forbid_clarifying=True,
             forbid_wrappers=True,
             max_paragraphs=1,
+            voice_budget_terms=("small on purpose", "incapable", "floorboards squeak", "hear the squeak"),
+            max_voice_budget_terms=2,
             prompt_mode="source_only",
         ),
         Case(
@@ -1908,6 +1928,18 @@ def run_validator_self_tests() -> list[str]:
                 forbid_added_hedges=True,
             ),
             "timidity drift",
+        ),
+        (
+            "voice budget",
+            Case(
+                "self_voice_budget",
+                "Keep the best texture, not every odd line.",
+                "one weird line two weird line three weird line",
+                must=("weird",),
+                voice_budget_terms=("one weird line", "two weird line", "three weird line"),
+                max_voice_budget_terms=1,
+            ),
+            "voice budget failed",
         ),
         (
             "opening",
@@ -3254,6 +3286,120 @@ def run_timidity_contract_tests() -> list[str]:
     return failures
 
 
+def run_voice_budget_contract_tests() -> list[str]:
+    """Catch bold rewrites that keep every colorful source marker instead of choosing."""
+    wordpress_memory = Case(
+        id="voice_budget_wordpress_memory_contract",
+        source=(
+            "ok so in that WordPress Core AI 7.1 whatever planning post I said "
+            "Guidelines was a workstream and that is true but also I did the "
+            "planning-doc move where you put the important thing in a list and pretend "
+            "that is the same as saying why it matters. It is not.\n\n"
+            "Guidelines sounds boring. like a place to put don't say utilize or use "
+            "sentence case. but that is not the interesting part. the interesting part "
+            "is memory.\n\n"
+            "Radical Speed Month was where I got to sit with this with @arturpiszek "
+            "and the thesis was Agent Memory is the real moat. agents without memory "
+            "are fancy autocomplete with a clipboard problem. they help once, then "
+            "forget what mattered unless you shove it back into context again.\n\n"
+            "Guidelines should not be some plugin drawer. I think it is the first real "
+            "WordPress-native persistence layer for agents: memories, skills, "
+            "artifacts, plans, reusable context. that needs to be discoverable, "
+            "permissioned, inspectable, and portable or it is vibes in a database "
+            "table.\n\n"
+            "this is why I think it belongs in core. plugins should experiment, but "
+            "memory is different. if agents act across WordPress, memory cannot be "
+            "scattered across seventeen plugin-specific junk drawers.\n\n"
+            "the current version is wp_guideline CPT, the primitive hiding in plain "
+            "sight. technical work is in Gutenberg PR #78296, access refinement, and "
+            "the big picture is issue #77230. this post is how wp_guideline grows "
+            "without everything turning into haunted localStorage."
+        ),
+        rewrite=(
+            "In WordPress Core AI: 7.1 Planning and Beyond, I named Guidelines as one "
+            "of the workstreams that could shape WordPress 7.1 and the next phase of "
+            "Core AI.\n\n"
+            "That was true, but it was also the planning-doc move: put the important "
+            "thing in a list and pretend that counts as saying why it matters.\n\n"
+            "It does not.\n\n"
+            "The interesting part of Guidelines is memory.\n\n"
+            "Radical Speed Month gave me the chance to work through that with "
+            "@arturpiszek, under the thesis that Agent Memory is the real moat. Agents "
+            "without memory are fancy autocomplete with a clipboard problem: useful "
+            "once, then empty again unless you shove the context back in.\n\n"
+            "Guidelines should be the first real WordPress-native persistence layer "
+            "for agents: memories, skills, artifacts, plans, and reusable context. "
+            "That context needs to be discoverable, permissioned, inspectable, and "
+            "portable. That is why it belongs in core.\n\n"
+            "Plugins should experiment. But memory is different. If agents are going "
+            "to act across WordPress, memory has to be something WordPress understands.\n\n"
+            "The current primitive is the wp_guideline CPT. The technical work is "
+            "already happening in Gutenberg PR #78296, currently at the "
+            "access-refinement stage, with the larger vision tracked in issue #77230.\n\n"
+            "This post is about what memory means here, why it belongs in core, and "
+            "how wp_guideline can grow into the first real place WordPress agents "
+            "remember things without everything turning into haunted localStorage."
+        ),
+        must=("Guidelines", "Agent Memory is the real moat", "wp_guideline", "#78296", "#77230"),
+        protected=("@arturpiszek", "wp_guideline", "#78296", "#77230"),
+        preserve_voice=("fancy autocomplete with a clipboard problem", "haunted localStorage"),
+        required_claims=(
+            "first real WordPress-native persistence layer",
+            "That is why it belongs in core",
+        ),
+        voice_budget_terms=(
+            "planning-doc move",
+            "Guidelines sounds boring",
+            "fancy autocomplete with a clipboard problem",
+            "shove it back into context",
+            "plugin drawer",
+            "goldfish in a trench coat",
+            "vibes in a database table",
+            "seventeen plugin-specific junk drawers",
+            "primitive hiding in plain sight",
+            "haunted localStorage",
+        ),
+        max_voice_budget_terms=3,
+        max_words=255,
+        max_source_similarity=0.72,
+    )
+    too_many_bits = (
+        "In WordPress Core AI: 7.1 Planning and Beyond, I named Guidelines as one of "
+        "the workstreams that could shape WordPress 7.1 and the next phase of Core AI. "
+        "That was true, but it was also the planning-doc move: put the important thing "
+        "in a list and pretend that counts as saying why it matters.\n\n"
+        "Guidelines sounds boring. The interesting part is memory.\n\n"
+        "Radical Speed Month gave me the chance to work through that with @arturpiszek, "
+        "under the thesis that Agent Memory is the real moat. Agents without memory are "
+        "fancy autocomplete with a clipboard problem. They help once, then forget what "
+        "mattered unless you shove it back into context.\n\n"
+        "Guidelines should not be a plugin drawer where context becomes vibes in a "
+        "database table. It should be the first real WordPress-native persistence layer "
+        "for agents: memories, skills, artifacts, plans, and reusable context.\n\n"
+        "Plugins should experiment, but memory is different. If agents act across "
+        "WordPress, memory cannot be scattered across seventeen plugin-specific junk "
+        "drawers. The current primitive is wp_guideline, hiding in plain sight. Work is "
+        "in Gutenberg PR #78296, with issue #77230 tracking the larger vision. This is "
+        "how wp_guideline grows without everything turning into haunted localStorage."
+    )
+    checks = [
+        ("WordPress memory compressed", wordpress_memory, None),
+        (
+            "WordPress memory hoards texture",
+            replace(wordpress_memory, rewrite=too_many_bits),
+            "voice budget failed",
+        ),
+    ]
+    failures: list[str] = []
+    for name, case, expected in checks:
+        errors = validate(case)
+        if expected is None and errors:
+            failures.append(f"{name}: expected pass, got {errors}")
+        elif expected is not None and not any(expected in error for error in errors):
+            failures.append(f"{name}: expected {expected}, got {errors}")
+    return failures
+
+
 def run_voice_texture_contract_tests() -> list[str]:
     """Catch over-sanitizing that removes identity, plain words, or the best line."""
     checks = [
@@ -3891,6 +4037,19 @@ def run_mutation_tests() -> list[str]:
             errors = validate(replace(case, rewrite=rewrite))
             expect_error(case.id, "added unsupported hedge", errors, "timidity drift")
 
+        if case.max_voice_budget_terms is not None and case.voice_budget_terms:
+            current = [
+                term for term in case.voice_budget_terms if contains_term(case.rewrite, term)
+            ]
+            missing = [
+                term for term in case.voice_budget_terms if not contains_term(case.rewrite, term)
+            ]
+            needed = case.max_voice_budget_terms + 1 - len(current)
+            if needed > 0 and missing:
+                rewrite = f"{case.rewrite} {' '.join(missing[:needed])}."
+                errors = validate(replace(case, rewrite=rewrite))
+                expect_error(case.id, "overstuffed voice budget", errors, "voice budget failed")
+
         if any(contains_term(case.source, term) for term in ("maybe", "may", "might", "probably")):
             rewrite = f"{case.rewrite} This definitely will happen."
             errors = validate(replace(case, rewrite=rewrite))
@@ -3933,6 +4092,7 @@ def main() -> int:
     source_only_artifact_test_failures = run_source_only_artifact_contract_tests()
     editorial_lift_test_failures = run_editorial_lift_contract_tests()
     timidity_test_failures = run_timidity_contract_tests()
+    voice_budget_test_failures = run_voice_budget_contract_tests()
     format_test_failures = run_format_contract_tests()
     voice_texture_test_failures = run_voice_texture_contract_tests()
     authorship_boundary_test_failures = run_authorship_boundary_contract_tests()
@@ -3949,6 +4109,7 @@ def main() -> int:
         or source_only_artifact_test_failures
         or editorial_lift_test_failures
         or timidity_test_failures
+        or voice_budget_test_failures
         or format_test_failures
         or voice_texture_test_failures
         or authorship_boundary_test_failures
@@ -3967,6 +4128,7 @@ def main() -> int:
             + source_only_artifact_test_failures
             + editorial_lift_test_failures
             + timidity_test_failures
+            + voice_budget_test_failures
             + format_test_failures
             + voice_texture_test_failures
             + authorship_boundary_test_failures

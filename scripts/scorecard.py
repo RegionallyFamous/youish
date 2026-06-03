@@ -34,6 +34,7 @@ from regression_100 import (
     run_timidity_contract_tests,
     run_thought_dump_contract_tests,
     run_validator_self_tests,
+    run_voice_budget_contract_tests,
     run_voice_texture_contract_tests,
     validate,
 )
@@ -55,6 +56,10 @@ GUARDRAILS: tuple[tuple[str, GuardrailCheck], ...] = (
     (
         "timidity_drift",
         lambda case: bool(case.strong_claims or case.frontload_terms or case.forbid_added_hedges),
+    ),
+    (
+        "selective_voice_compression",
+        lambda case: case.max_voice_budget_terms is not None,
     ),
     ("uncertainty_handling", lambda case: case.preserve_uncertainty),
     ("stance_preservation", lambda case: bool(case.preserve_stance)),
@@ -154,6 +159,7 @@ CONTRACT_CHECKS = (
     ("source_only_artifact_contracts", run_source_only_artifact_contract_tests),
     ("editorial_lift_contracts", run_editorial_lift_contract_tests),
     ("timidity_contracts", run_timidity_contract_tests),
+    ("voice_budget_contracts", run_voice_budget_contract_tests),
     ("format_contracts", run_format_contract_tests),
     ("voice_texture_contracts", run_voice_texture_contract_tests),
     ("authorship_boundary_contracts", run_authorship_boundary_contract_tests),
